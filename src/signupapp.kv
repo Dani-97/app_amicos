@@ -1,0 +1,50 @@
+<SignupScreen>:
+    BoxLayout:
+        orientation: "vertical"
+        padding: 50
+        spacing: 20
+
+        TextInput:
+            id: username
+            font_size: 40
+            hint_text: "Nombre de usuario"
+            multiline: False
+
+        TextInput:
+            id: role
+            font_size: 40
+            hint_text: "Rol"
+            multiline: False
+
+        TextInput:
+            id: email
+            font_size: 40
+            hint_text: "Email"
+            multiline: False
+
+        TextInput:
+            id: password
+            font_size: 40
+            hint_text: "Contraseña"
+            multiline: False
+            password: True
+
+        Button:
+            text: "Crear cuenta"
+            font_size: 35
+            size_hint: (0.2, 0.75)
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            on_press: root.execute_signup()
+
+        Label:
+            id: login_link
+            font_size: 40
+            text: "¿Ya tienes cuenta? [color=2754F5][ref=login_link]Iniciar sesión[/ref][/color]"
+            on_ref_press: root.go_to_login_page()
+            markup: True
+
+        Label:
+            id: message
+            font_size: 40
+            text: ""
+            markup: True

@@ -1,0 +1,38 @@
+<LoginScreen>:
+    BoxLayout:
+        orientation: "vertical"
+        padding: 50
+        spacing: 20
+
+        TextInput:
+            id: username
+            font_size: 40
+            hint_text: "Nombre de usuario"
+            multiline: False
+
+        TextInput:
+            id: password
+            font_size: 40
+            hint_text: "Contraseña"
+            multiline: False
+            password: True
+
+        Button:
+            text: "Iniciar Sesión"
+            font_size: 35
+            size_hint: (0.2, 0.75)
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            on_press: root.validate_login()
+
+        Label:
+            id: login_link
+            font_size: 40
+            text: "¿No tienes cuenta? [color=2754F5][ref=signup_link]Crear cuenta[/ref][/color]"
+            on_ref_press: root.go_to_signup_page()
+            markup: True
+
+        Label:
+            id: message
+            font_size: 40
+            text: ""
+            markup: True

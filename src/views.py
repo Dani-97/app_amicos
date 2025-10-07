@@ -4,11 +4,19 @@ from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen, ScreenManager
 from KivyCustom.Custom import ButtonRnd, CustomTextInput
 from KivyCustom.Custom import Tile
 from kivy.uix.scrollview import ScrollView
 from openpyxl import load_workbook
+
+from utils_exceptions import LogInException
+from utils_exceptions import InvalidUsernameException
+from utils_exceptions import InvalidEmailException
+from utils_exceptions import InvalidPasswordException
+from utils_exceptions import DuplicatedUserException
+from utils_exceptions import UserDeletionException
 
 class AmicosApp(App):
 
@@ -17,6 +25,9 @@ class AmicosApp(App):
 
     def set_message_builder_provider(self, message_builder_provider):
         self.message_builder_provider = message_builder_provider
+
+    def set_profiles_manager_provider(self, profiles_manager_provider):
+        self.profiles_manager_provider = profiles_manager_provider
 
     def set_settings_provider(self, settings_provider):
         self.settings_provider = settings_provider
@@ -33,13 +44,32 @@ class AmicosApp(App):
         LabelBase.register(name='Titulo', fn_regular=self.ui_assets_manager.get_resource('src/fonts/Orbitron-Regular.ttf'))
         LabelBase.register(name='Texto', fn_regular=self.ui_assets_manager.get_resource('src/fonts/FrancoisOne-Regular.ttf'))
 
+        Builder.load_file(self.ui_assets_manager.get_resource('src/KivyCustom/custom.kv'))
         main_window = MainWindow(self.ui_assets_manager,
                                  self.message_builder_provider,
-                                 self.settings_provider)
+                                 self.profiles_manager_provider,
+                                 self.settings_provider,
+                                 name="main_window")
         main_window.build()
 
+        Builder.load_file("src/signupapp.kv")
+        signup_screen = SignupScreen(self.profiles_manager_provider,
+                                     name="signup_screen")
+        Builder.load_file("src/loginapp.kv")
+        login_screen = LogInScreen(self.profiles_manager_provider,
+                                   name="login_screen")
+
         self.sm = ScreenManager()
+        self.sm.add_widget(signup_screen)
+        self.sm.add_widget(login_screen)
         self.sm.add_widget(main_window)
+
+        current_user = self.profiles_manager_provider.get_current_user()
+
+        if (current_user!=None):
+            self.sm.current = "main_window"
+        else:
+            self.sm.current = "signup_screen"
 
         return self.sm
 
@@ -88,18 +118,88 @@ class GridWindow(GridLayout):
             self.message_builder_provider.add_word_to_message(tile_text)
             self.parent_window.swap_grid_window(self.tab_id)
 
+class LogInScreen(Screen):
+
+    def __init__(self, profiles_manager_provider, **kwargs):
+        super(LogInScreen, self).__init__(**kwargs)
+        self.profiles_manager_provider = profiles_manager_provider
+
+    def go_to_signup_page(self):
+        self.manager.current = 'signup_screen'  # Switch to the login screen
+
+    def go_to_main_window(self):
+        self.manager.current = 'main_window'
+
+    def build(self):
+        pass
+
+    def validate_login(self):
+        username = self.ids.username.text
+        password = self.ids.password.text
+
+        try:
+            _ = self.profiles_manager_provider.login_user(username, password)
+            self.ids.message.text = f"[color=00ff00]Inicio de sesión correcto[/color]"
+            self.go_to_main_window()
+        except LogInException:
+            self.ids.message.text = "[color=ff0000]Nombre de usuario o contraseña incorrectos[/color]"
+
+class SignupScreen(Screen):
+
+    def __init__(self, profiles_manager_provider, **kwargs):
+        super(SignupScreen, self).__init__(**kwargs)
+        Window.size = (2048, 1080)
+        self.profiles_manager_provider = profiles_manager_provider
+
+    def go_to_login_page(self):
+        self.manager.current = 'login_screen'  # Switch to the login screen
+
+    def go_to_main_window(self):
+        self.manager.current = 'main_window'  # Switch to the login screen
+
+    def execute_signup(self):        
+        username = self.ids.username.text
+        email = self.ids.email.text
+        role = self.ids.role.text
+        password = self.ids.password.text
+
+        try: 
+            self.profiles_manager_provider.create_user(username, email, role, password)
+            self.ids.message.text = f"[color=00ff00]Cuenta creada correctamente[/color]"
+            _ = self.profiles_manager_provider.login_user(username, password)
+            self.go_to_main_window()
+        except InvalidUsernameException as except_obj:
+            self.ids.message.text = f"[color=ff0000]{except_obj}[/color]"
+        except InvalidEmailException as except_obj:
+            self.ids.message.text = f"[color=ff0000]{except_obj}[/color]"
+        except InvalidPasswordException as except_obj:
+            self.ids.message.text = f"[color=ff0000]{except_obj}[/color]"
+        except DuplicatedUserException as except_obj:
+            self.ids.message.text = f"[color=ff0000]{except_obj}[/color]"
+
 class MainWindow(Screen):
 
-    def __init__(self, ui_assets_manager, message_builder_provider, settings_provider, **kwargs):
+    def __init__(self, 
+                 ui_assets_manager, 
+                 message_builder_provider, 
+                 profiles_manager_provider,
+                 settings_provider, 
+                 **kwargs):
         super(MainWindow, self).__init__(**kwargs)
         self.ui_assets_manager = ui_assets_manager
         self.message_builder_provider = message_builder_provider
         self.message_builder_provider.add_notified(self)
+        self.profiles_manager_provider = profiles_manager_provider
+        self.profiles_manager_provider.add_notified(self)
         self.settings_provider = settings_provider
         self.settings_provider.add_notified(self)
+        
+        self.settings_items_vertical_layout = None
+
         Window.size = (2048, 1080)
 
-        Builder.load_file(self.ui_assets_manager.get_resource('src/KivyCustom/custom.kv'))
+    def go_to_login_page(self):
+        self.manager.current = "login_screen"
 
     def build(self):
         self.ui_assets_manager.set_language(self.settings_provider.get_current_language())
@@ -117,19 +217,36 @@ class MainWindow(Screen):
         self.vertical_layout.add_widget(buttons_layout)
         self.main_layout.add_widget(self.vertical_layout)
 
-        # Botón de configuración
+        self.settings_items_vertical_layout = BoxLayout(orientation='vertical',
+                                                        size_hint_x=None, 
+                                                        width=200)
+
+        # Botón para cambiar el modo de las celdas
         self.but_tile_mode = ButtonRnd(text=self.ui_assets_manager.get_string("modo_celdas"), 
-                                     size_hint=(.15, 1), 
                                      on_press=self.on_click_but_tile_mode, 
                                      font_name='Texto')
-        buttons_layout.add_widget(self.but_tile_mode)
+        self.settings_items_vertical_layout.add_widget(self.but_tile_mode)
 
         # Botón de idioma
         self.but_language = ButtonRnd(text=self.ui_assets_manager.get_string("idioma"), 
-                            size_hint=(.15, 1), 
                             on_press=self.on_click_but_language, 
                             font_name='Texto')
-        buttons_layout.add_widget(self.but_language)
+        self.settings_items_vertical_layout.add_widget(self.but_language)
+
+        current_user = self.profiles_manager_provider.get_current_user()
+
+        self.label_username = ButtonRnd(text="", font_size=40, disabled=True)
+        if (current_user!=None):
+            self.label_username.text = current_user.get_username()
+        self.settings_items_vertical_layout.add_widget(self.label_username)
+
+        # Botón de cerrar sesión
+        self.but_close_session = ButtonRnd(text=self.ui_assets_manager.get_string("cerrar_sesion"), 
+                            on_press=self.on_click_but_close_session, 
+                            font_name='Texto')
+        self.settings_items_vertical_layout.add_widget(self.but_close_session)
+        
+        buttons_layout.add_widget(self.settings_items_vertical_layout)
 
         # Espacio para texto
         scroll = ScrollView(size_hint=(.4, 1), scroll_type=['bars', 'content'], bar_width=10)
@@ -154,19 +271,22 @@ class MainWindow(Screen):
         scroll.add_widget(self.tf_user_aac_message)
         buttons_layout.add_widget(scroll)
 
+        self.delete_buttons_vertical_layout = BoxLayout(orientation='vertical',
+                                                        size_hint_x=None, 
+                                                        width=200)
         # El boton para borrar una palabra
-        self.but_delete_last_word = ButtonRnd(text=self.ui_assets_manager.get_string("borrar"), 
-                                              size_hint=(.15, 1), 
+        self.but_delete_last_word = ButtonRnd(text=self.ui_assets_manager.get_string("borrar"),  
                                               on_press=self.on_click_but_delete_last_word, 
                                               font_name='Texto')
-        buttons_layout.add_widget(self.but_delete_last_word)
+        self.delete_buttons_vertical_layout.add_widget(self.but_delete_last_word)
 
         # El boton para borrar todo el texto
         self.but_clear_message = ButtonRnd(text=self.ui_assets_manager.get_string("borrar_todo"), 
-                                           size_hint=(.15, 1), 
                                            on_press=self.on_click_but_clear_message, 
                                            font_name='Texto')
-        buttons_layout.add_widget(self.but_clear_message)
+        self.delete_buttons_vertical_layout.add_widget(self.but_clear_message)
+
+        buttons_layout.add_widget(self.delete_buttons_vertical_layout)
 
         self.grids_content = {}
         self.build_grid_content()
@@ -194,7 +314,8 @@ class MainWindow(Screen):
 
             self.grids_content[sheet_name] = words_with_images
 
-    def update_message(self, message):
+    def update_message(self):
+        message = self.message_builder_provider.get_current_message()
         message_str = ""
         for current_word in message:
             message_str+=" " + current_word
@@ -204,6 +325,13 @@ class MainWindow(Screen):
     def update_language(self):
         self.message_builder_provider.clear_message()
         self.build()
+
+    def update_login(self):
+        current_user = self.profiles_manager_provider.get_current_user()
+        if (current_user!=None):
+            self.build()
+        else:
+            self.go_to_login_page()
 
     def swap_grid_window(self, tab_id):
         if (self.grid_window is not None):
@@ -234,6 +362,9 @@ class MainWindow(Screen):
                 current_language_idx = (idx+1)%(len(available_languages))
 
         self.settings_provider.change_current_language(available_languages[current_language_idx])
+
+    def on_click_but_close_session(self, widget):
+        self.profiles_manager_provider.logout_current_user()
 
     def on_click_but_tile_mode(self, widget):
         self.message_builder_provider.clear_message()

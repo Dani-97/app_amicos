@@ -31,6 +31,7 @@
     "info_gemini": "Para poder conxugar as frases automaticamente, asegúrese de ter conexión a internet e siga as instrucións da documentación para configurar a API de Google Gemini.",
     "idioma": "Idioma",
     "modo_celdas": "Texto Si/Non",
+    "cerrar_sesion": "Pechar sesión",
 
     "_comment2": " ----------- MENSAJES AL USUARIO ----------- ",
     "mensaje_calibracion_fallida": "Erro na calibración, asegúrese de que o usuario está centrado e ben iluminado",

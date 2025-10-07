@@ -44,7 +44,7 @@ class MessageBuilderProvider():
 
     def __notify_widgets__(self):
         for widget in self.notified_widgets_list:
-            widget.update_message(self.message)
+            widget.update_message()
 
     def get_current_message(self):
         return self.message
