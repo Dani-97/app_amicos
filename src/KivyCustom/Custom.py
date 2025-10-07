@@ -70,18 +70,14 @@ class CustomTextInput(TextInput):
             self.background_color = (0.7, 0.7, 0.7, 1)
             return True
         return super(CustomTextInput, self).on_touch_up(touch)
+
+class Tile(Button, ButtonBehavior, BoxLayout):
     
-class Tile(Button):
-    pass
-
-class TileWithPictogram(ButtonBehavior, BoxLayout):
-    source = StringProperty('')
-    text = StringProperty('')
-
-    def __init__(self, **kwargs):
-        super(TileWithPictogram, self).__init__(**kwargs)
+    def __init__(self, text, source, tile_mode, **kwargs):
+        super(Tile, self).__init__(**kwargs)
+        self.tile_associated_text = text
         self.orientation = 'vertical'
-        self.label = Label(text = self.text,
+        self.label = Label(text=text,
                            size_hint_y=None,
                            height=40,
                            halign='center', 
@@ -89,8 +85,30 @@ class TileWithPictogram(ButtonBehavior, BoxLayout):
                            font_name='Texto', 
                            font_size=32, 
                            color=(0, 0, 0, 1))
+        self.image = AsyncImage(source=source)
 
-        self.image = AsyncImage(source=self.source)
+        if (tile_mode=="text_and_pictogram"):
+            self.__show_text_and_pictogram__()
+
+        if (tile_mode=="only_text"):
+            self.__show_only_text__()
+
+        if (tile_mode=="only_pictogram"):
+            self.__show_only_pictogram__()
+
+    def __show_only_text__(self):
+        self.add_widget(Widget(size_hint_y=0.2))
+        self.add_widget(self.label)
+        self.add_widget(Widget(size_hint_y=0.03))
+
+    def __show_only_pictogram__(self):
+        self.add_widget(self.image)
+        self.add_widget(Widget(size_hint_y=0.2))
+        self.label.text=""
+        self.add_widget(self.label)
+        self.add_widget(Widget(size_hint_y=0.03))
+
+    def __show_text_and_pictogram__(self):
         self.add_widget(self.image)
         self.add_widget(Widget(size_hint_y=0.2))
         self.add_widget(self.label)

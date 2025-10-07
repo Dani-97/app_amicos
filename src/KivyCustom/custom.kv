@@ -64,34 +64,7 @@
             rounded_rectangle: self.x, self.y, self.width, self.height, 15
             width: 1.5
 
-<Tile@Button>:
-    font_size: 32
-    size_hint: self.size_hint
-    height: 40
-    background_color:  (0,0,0,0)
-    color: (0,0,0,1)
-    color_down: 0.3, 0.3, 0.3, 1  
-    border: 10, 10, 10, 10  
-    canvas.before:
-        Color:
-            rgba: self.color_down if self.state == 'down' else ((0.5, 0.5, 0.5, 1) if self.text.startswith('TAB.') else (0.7, 0.7, 0.7, 1))  
-        RoundedRectangle:
-            pos: self.pos
-            size: self.size
-            radius: [15,]
-    canvas.after:
-        Color:
-            rgba: 1, 1, 1, 1  
-        Line:
-            rounded_rectangle: self.x, self.y, self.width, self.height, 15
-            width: 1.5
-        Color:
-            rgba: 0.4, 0.4, 0.4, 1  
-        Line:
-            rounded_rectangle: (self.x+self.width*0.05), (self.y+self.height*0.1),( self.width-self.width*0.1), (self.height-self.height*0.2), 15
-            width: 1.5
-
-<TileWithPictogram>:
+<Tile>:
     size_hint: self.size_hint
     height: 40
     background_color:  (0,0,0,0)

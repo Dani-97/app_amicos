@@ -7,10 +7,8 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import Screen, ScreenManager
 from KivyCustom.Custom import ButtonRnd, CustomTextInput
 from KivyCustom.Custom import Tile
-from KivyCustom.Custom import TileWithPictogram
 from kivy.uix.scrollview import ScrollView
 from openpyxl import load_workbook
-import os
 
 class AmicosApp(App):
 
@@ -20,14 +18,15 @@ class AmicosApp(App):
     def set_message_builder_provider(self, message_builder_provider):
         self.message_builder_provider = message_builder_provider
 
+    def set_settings_provider(self, settings_provider):
+        self.settings_provider = settings_provider
+
     """
     Clase principal de la aplicación, se encarga de la inicialización
     Es la encargada de iniciar la aplicación y construirla.    
     """
     def build(self):
-        self.title = 'App Amicos'  
-        
-        self.ui_assets_manager.set_language("es_ES")
+        self.title = 'App Amicos'
         
         self.icon = self.ui_assets_manager.get_resource("assets/logo.png")
         
@@ -35,7 +34,8 @@ class AmicosApp(App):
         LabelBase.register(name='Texto', fn_regular=self.ui_assets_manager.get_resource('src/fonts/FrancoisOne-Regular.ttf'))
 
         main_window = MainWindow(self.ui_assets_manager,
-                                 self.message_builder_provider)
+                                 self.message_builder_provider,
+                                 self.settings_provider)
         main_window.build()
 
         self.sm = ScreenManager()
@@ -57,9 +57,9 @@ class GridWindow(GridLayout):
     def set_ui_assets_manager(self, ui_assets_manager):
         self.ui_assets_manager = ui_assets_manager
 
-    def set_content(self, words_with_images, pictograms):
+    def set_content(self, words_with_images, tile_mode):
         self.words_with_images = words_with_images
-        self.pictograms = pictograms
+        self.tile_mode = tile_mode
 
     def set_message_builder_provider(self, message_builder_provider):
         self.message_builder_provider = message_builder_provider
@@ -71,21 +71,16 @@ class GridWindow(GridLayout):
         self.tiles = []
         for row in self.words_with_images:
             for picture, word in row:
-                if self.pictograms:
-                    tile = TileWithPictogram(text=str(word), source=self.ui_assets_manager.get_resource(f'src/assets/{picture}'), on_press=self.on_tile_clicked)
-                else:
-                    tile = Tile(text=str(word), on_press=self.on_tile_clicked, font_name='Texto')
+                tile = Tile(str(word),
+                            self.ui_assets_manager.get_resource(f'src/assets/{picture}'),
+                            self.tile_mode,
+                            on_press=self.on_tile_clicked)
                 self.tiles.append(tile)
                 self.add_widget(tile)
 
     # Función que se ejecuta al pulsar una casilla
     def on_tile_clicked(self, instance):
-        tile_text = ""
-
-        if (self.pictograms):
-            tile_text = instance.label.text
-        else: 
-            tile_text = instance.text
+        tile_text = instance.tile_associated_text
         
         try:        
             self.parent_window.swap_grid_window(tile_text)
@@ -95,18 +90,19 @@ class GridWindow(GridLayout):
 
 class MainWindow(Screen):
 
-    def __init__(self, ui_assets_manager, message_builder_provider, **kwargs):
+    def __init__(self, ui_assets_manager, message_builder_provider, settings_provider, **kwargs):
         super(MainWindow, self).__init__(**kwargs)
         self.ui_assets_manager = ui_assets_manager
         self.message_builder_provider = message_builder_provider
         self.message_builder_provider.add_notified(self)
+        self.settings_provider = settings_provider
+        self.settings_provider.add_notified(self)
         Window.size = (2048, 1080)
 
-    def build(self):
-        self.but_delete_last_word = None
-        self.but_clear_message = None
-
         Builder.load_file(self.ui_assets_manager.get_resource('src/KivyCustom/custom.kv'))
+
+    def build(self):
+        self.ui_assets_manager.set_language(self.settings_provider.get_current_language())
 
         # Layout principal
         self.main_layout = BoxLayout(orientation='vertical')  # Cambia la orientación a vertical
@@ -121,13 +117,19 @@ class MainWindow(Screen):
         self.vertical_layout.add_widget(buttons_layout)
         self.main_layout.add_widget(self.vertical_layout)
 
-        # El boton de inicio
-        self.but_config = ButtonRnd(text=self.ui_assets_manager.get_string("config"), 
-                                    size_hint=(.15, 1), 
-                                    on_press=self.on_click_but_settings, 
-                                    font_name='Texto', 
-                                    disabled = True)
-        buttons_layout.add_widget(self.but_config)
+        # Botón de configuración
+        self.but_tile_mode = ButtonRnd(text=self.ui_assets_manager.get_string("modo_celdas"), 
+                                     size_hint=(.15, 1), 
+                                     on_press=self.on_click_but_tile_mode, 
+                                     font_name='Texto')
+        buttons_layout.add_widget(self.but_tile_mode)
+
+        # Botón de idioma
+        self.but_language = ButtonRnd(text=self.ui_assets_manager.get_string("idioma"), 
+                            size_hint=(.15, 1), 
+                            on_press=self.on_click_but_language, 
+                            font_name='Texto')
+        buttons_layout.add_widget(self.but_language)
 
         # Espacio para texto
         scroll = ScrollView(size_hint=(.4, 1), scroll_type=['bars', 'content'], bar_width=10)
@@ -175,7 +177,7 @@ class MainWindow(Screen):
         self.vertical_layout.add_widget(blank_space)
 
     def build_grid_content(self):
-        language = "es_ES"
+        language = self.settings_provider.get_current_language()
         filename = self.ui_assets_manager.get_resource(f'src/grids/grids_{language}.xlsx')
         wb = load_workbook(filename)
         for sheet_name in wb.sheetnames:
@@ -199,13 +201,18 @@ class MainWindow(Screen):
 
         self.tf_user_aac_message.text = message_str
 
+    def update_language(self):
+        self.message_builder_provider.clear_message()
+        self.build()
+
     def swap_grid_window(self, tab_id):
         if (self.grid_window is not None):
             self.main_layout.remove_widget(self.grid_window)
         
         self.grid_window = GridWindow(self, tab_id, size_hint=(1, 0.8))
         self.grid_window.set_ui_assets_manager(self.ui_assets_manager)
-        self.grid_window.set_content(self.grids_content[tab_id], True)
+        self.grid_window.set_content(self.grids_content[tab_id], 
+                                     self.settings_provider.get_current_tile_mode())
         self.grid_window.set_message_builder_provider(self.message_builder_provider)
         self.grid_window.build()
 
@@ -218,8 +225,26 @@ class MainWindow(Screen):
     def on_tf_user_aac_message_touch_down(self, widget, touch):
         pass
 
-    def on_click_but_settings(self, widget):
-        pass
+    def on_click_but_language(self, widget):
+        available_languages = self.settings_provider.get_available_languages()
+        current_language = self.settings_provider.get_current_language()
+        
+        for idx, language_aux in enumerate(available_languages):
+            if (current_language==language_aux):
+                current_language_idx = (idx+1)%(len(available_languages))
+
+        self.settings_provider.change_current_language(available_languages[current_language_idx])
+
+    def on_click_but_tile_mode(self, widget):
+        self.message_builder_provider.clear_message()
+        available_tile_modes = self.settings_provider.get_available_tile_modes()
+        current_tile_mode = self.settings_provider.get_current_tile_mode()
+
+        for idx, tile_mode_aux in enumerate(available_tile_modes):
+            if (current_tile_mode==tile_mode_aux):
+                current_tile_mode_idx = (idx+1)%(len(available_tile_modes))
+        
+        self.settings_provider.change_current_tile_mode(available_tile_modes[current_tile_mode_idx])
 
     def on_click_but_delete_last_word(self, widget):
         self.message_builder_provider.remove_last_word_from_message()

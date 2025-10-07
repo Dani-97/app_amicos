@@ -29,7 +29,8 @@
     "seleccion_camara" : "Seleccione una cámara",
     "seleccion_voz" : "Seleccione una voz",
     "info_gemini": "Para poder conjugar las frases automáticamente, asegúrese de tener conexión a internet y siga las instrucciones de la documentación para configurar la API de Google Gemini.",
-
+    "idioma": "Idioma",
+    "modo_celdas": "Texto Sí/No",
 
     "_comment2": " ----------- MENSAJES AL USUARIO ----------- ",
     "mensaje_calibracion_fallida": "Calibración fallida, asegúrese de que el usuario está centrado y bien iluminado",
