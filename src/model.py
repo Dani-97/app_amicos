@@ -115,17 +115,18 @@ class Model:
         is_password_format_correct = self.password_format_validator(password)
 
         if (not is_username_format_correct):
-            raise InvalidUsernameException("The username format is not correct. It must be between 4 and 12 characters.")
+            raise InvalidUsernameException("El formato del nombre de usuario no es correcto. Debe tener entre 4 y 12 caracteres.")
 
         if (not is_email_format_correct):
-            raise InvalidEmailException("The email format is not correct")
+            raise InvalidEmailException("El formato de la dirección de email no es correcto.")
 
         if (not is_password_format_correct):
-            raise InvalidPasswordException("The password must be between 6 and 12 characters, have at least one number, one uppercase, one lowercase and one special character from $, @, # or %.")
+            # La contraseña debe tener entre 6 y 12 caracteres, tener al menos un número, una mayúscula, una minúscula y un carácter especial de $, @, # ó %
+            raise InvalidPasswordException("La contraseña tiene un formato incorrecto.")
 
         retrieved_user = self.get_user_by_username(username)
         if (retrieved_user is not None):
-            raise DuplicatedUserException("This username already exists")
+            raise DuplicatedUserException("Este nombre de usuario ya existe")
         else:
             conn = sqlite3.connect(self.USERS_DB_PATH)
             c = conn.cursor()

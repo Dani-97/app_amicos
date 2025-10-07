@@ -1,6 +1,9 @@
 FROM ubuntu:25.04
 
 RUN apt-get update
+
+RUN apt-get install ffmpeg libsm6 libxext6 libmtdev-dev x11-apps -y
+
 RUN apt-get install nano -y
 RUN apt-get install python3.13-venv -y
 RUN apt-get install python3-pip -y
