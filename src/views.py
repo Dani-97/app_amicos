@@ -41,10 +41,10 @@ class AmicosApp(App):
         
         self.icon = self.ui_assets_manager.get_resource("assets/logo.png")
         
-        LabelBase.register(name='Titulo', fn_regular=self.ui_assets_manager.get_resource('src/fonts/Orbitron-Regular.ttf'))
-        LabelBase.register(name='Texto', fn_regular=self.ui_assets_manager.get_resource('src/fonts/FrancoisOne-Regular.ttf'))
+        LabelBase.register(name='Titulo', fn_regular=self.ui_assets_manager.get_resource('fonts/Orbitron-Regular.ttf'))
+        LabelBase.register(name='Texto', fn_regular=self.ui_assets_manager.get_resource('fonts/FrancoisOne-Regular.ttf'))
 
-        Builder.load_file(self.ui_assets_manager.get_resource('src/KivyCustom/custom.kv'))
+        Builder.load_file(self.ui_assets_manager.get_resource('KivyCustom/custom.kv'))
         main_window = MainWindow(self.ui_assets_manager,
                                  self.message_builder_provider,
                                  self.profiles_manager_provider,
@@ -52,10 +52,10 @@ class AmicosApp(App):
                                  name="main_window")
         main_window.build()
 
-        Builder.load_file("src/signupapp.kv")
+        Builder.load_file("signupapp.kv")
         signup_screen = SignupScreen(self.profiles_manager_provider,
                                      name="signup_screen")
-        Builder.load_file("src/loginapp.kv")
+        Builder.load_file("loginapp.kv")
         login_screen = LogInScreen(self.profiles_manager_provider,
                                    name="login_screen")
 
@@ -102,7 +102,7 @@ class GridWindow(GridLayout):
         for row in self.words_with_images:
             for picture, word in row:
                 tile = Tile(str(word),
-                            self.ui_assets_manager.get_resource(f'src/assets/{picture}'),
+                            self.ui_assets_manager.get_resource(f'assets/{picture}'),
                             self.tile_mode,
                             on_press=self.on_tile_clicked)
                 self.tiles.append(tile)
@@ -245,31 +245,8 @@ class MainWindow(Screen):
                             on_press=self.on_click_but_close_session, 
                             font_name='Texto')
         self.settings_items_vertical_layout.add_widget(self.but_close_session)
-        
+
         buttons_layout.add_widget(self.settings_items_vertical_layout)
-
-        # Espacio para texto
-        scroll = ScrollView(size_hint=(.4, 1), scroll_type=['bars', 'content'], bar_width=10)
-        self.tf_user_aac_message = CustomTextInput(
-            text="",
-            # Limita el ancho del texto al ancho del widget
-            #size_hint_y=None,  # Esto permitirá que el TextInput se expanda a su tamaño natural
-            height=Window.height * 0.2,  # Altura inicial del TextInput
-            halign='left',  
-            font_name='Texto', 
-            font_size=40,
-            background_color=(0.7, 0.7, 0.7, 1),
-            foreground_color=(0, 0, 0, 1),
-            readonly=True,
-            cursor_blink=False,  # Deshabilita el parpadeo del cursor
-            cursor_width=0,  # Establece el ancho del cursor a 0
-            focus=False
-        )
-
-        self.tf_user_aac_message.bind(on_text=self.on_tf_user_aac_message_text_changed)  # Añade un evento para cuando el texto cambie
-        self.tf_user_aac_message.bind(on_touch_down = self.on_tf_user_aac_message_touch_down)
-        scroll.add_widget(self.tf_user_aac_message)
-        buttons_layout.add_widget(scroll)
 
         self.delete_buttons_vertical_layout = BoxLayout(orientation='vertical',
                                                         size_hint_x=None, 
@@ -288,6 +265,29 @@ class MainWindow(Screen):
 
         buttons_layout.add_widget(self.delete_buttons_vertical_layout)
 
+        # Espacio para texto
+        self.scroll_container = ScrollView(size_hint=(.4, 1), scroll_type=['bars', 'content'], bar_width=10)
+        self.tf_user_aac_message = CustomTextInput(
+            text="",
+            # Limita el ancho del texto al ancho del widget
+            #size_hint_y=None,  # Esto permitirá que el TextInput se expanda a su tamaño natural
+            height=Window.height * 0.2,  # Altura inicial del TextInput
+            halign='left',  
+            font_name='Texto', 
+            font_size=40,
+            background_color=(0.7, 0.7, 0.7, 1),
+            foreground_color=(0, 0, 0, 1),
+            readonly=True,
+            cursor_blink=False,  # Deshabilita el parpadeo del cursor
+            cursor_width=0,  # Establece el ancho del cursor a 0
+            focus=False
+        )
+
+        # self.tf_user_aac_message.bind(on_text=self.on_tf_user_aac_message_text_changed)  # Añade un evento para cuando el texto cambie
+        # self.tf_user_aac_message.bind(on_touch_down = self.on_tf_user_aac_message_touch_down)
+        self.scroll_container.add_widget(self.tf_user_aac_message)
+        buttons_layout.add_widget(self.scroll_container)
+
         self.grids_content = {}
         self.build_grid_content()
 
@@ -298,7 +298,7 @@ class MainWindow(Screen):
 
     def build_grid_content(self):
         language = self.settings_provider.get_current_language()
-        filename = self.ui_assets_manager.get_resource(f'src/grids/grids_{language}.xlsx')
+        filename = self.ui_assets_manager.get_resource(f'grids/grids_{language}.xlsx')
         wb = load_workbook(filename)
         for sheet_name in wb.sheetnames:
             ws = wb[sheet_name]
@@ -320,7 +320,25 @@ class MainWindow(Screen):
         for current_word in message:
             message_str+=" " + current_word
 
-        self.tf_user_aac_message.text = message_str
+        self.scroll_container.remove_widget(self.tf_user_aac_message)
+
+        self.tf_user_aac_message = CustomTextInput(
+            text=message_str,
+            # Limita el ancho del texto al ancho del widget
+            #size_hint_y=None,  # Esto permitirá que el TextInput se expanda a su tamaño natural
+            height=Window.height * 0.2,  # Altura inicial del TextInput
+            halign='left',  
+            font_name='Texto', 
+            font_size=40,
+            background_color=(0.7, 0.7, 0.7, 1),
+            foreground_color=(0, 0, 0, 1),
+            readonly=True,
+            cursor_blink=False,  # Deshabilita el parpadeo del cursor
+            cursor_width=0,  # Establece el ancho del cursor a 0
+            focus=False
+        )
+
+        self.scroll_container.add_widget(self.tf_user_aac_message)
 
     def update_language(self):
         self.message_builder_provider.clear_message()
@@ -347,11 +365,11 @@ class MainWindow(Screen):
         self.main_layout.add_widget(self.grid_window, index=0)
         self.main_layout.do_layout()
 
-    def on_tf_user_aac_message_text_changed(self, widget):
-        pass
+    # def on_tf_user_aac_message_text_changed(self, widget):
+    #     pass
 
-    def on_tf_user_aac_message_touch_down(self, widget, touch):
-        pass
+    # def on_tf_user_aac_message_touch_down(self, widget, touch):
+    #     pass
 
     def on_click_but_language(self, widget):
         available_languages = self.settings_provider.get_available_languages()

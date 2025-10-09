@@ -9,7 +9,7 @@ class UIAssetsManager():
 
     def set_language(self, selected_language_code):
         self.selected_language_code = selected_language_code
-        with open(self.get_resource(f"src/strings/{self.selected_language_code}.json"), "r", encoding='utf-8') as f:
+        with open(self.get_resource(f"strings/{self.selected_language_code}.json"), "r", encoding='utf-8') as f:
             self.strings = json_load(f)
 
     def get_resource(self, relative_path):
