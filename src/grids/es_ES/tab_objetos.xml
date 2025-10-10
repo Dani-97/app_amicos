@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<table>
+    <row>
+        <category picture_url="tab-inicial.png" link="main_window">INICIO</category>
+        <item picture_url="dinero.png">DINERO</item>
+        <item picture_url="bateria.png">BATERÍA</item>
+        <item picture_url="silla.png">SILLA</item>
+        <item picture_url="paraguas.png">PARAGUAS</item>
+        <item picture_url="gafas.png">GAFAS</item>
+    </row>
+    <row>
+        <item picture_url="reloj.png">RELOJ</item>
+        <item picture_url="bolsa.png">BOLSA</item>
+        <item picture_url="television.png">TELEVISIÓN</item>
+        <item picture_url="ordenador.png">ORDENADOR</item>
+        <item picture_url="botella.png">BOTELLA</item>
+        <item picture_url="horno.png">HORNO</item>
+    </row>
+</table>

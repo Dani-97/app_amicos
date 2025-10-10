@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<table>
+    <row>
+        <category picture_url="tab-inicial.png" link="main_window">INICIO</category>
+        <item picture_url="perro.png">PERRO</item>
+        <item picture_url="gato.png">GATO</item>
+        <item picture_url="caballo.png">CABALLO</item>
+        <item picture_url="cerdo.png">CERDO</item>
+        <item picture_url="conejo.png">CONEJO</item>
+    </row>
+    <row>
+        <item picture_url="abeja.png">ABEJA</item>
+        <item picture_url="pajaro.png">PÁJARO</item>
+        <item picture_url="delfin.png">DELFÍN</item>
+        <item picture_url="tortuga.png">TORTUGA</item>
+        <item picture_url="serpiente.png">SERPIENTE</item>
+        <item picture_url="mosquito.png">MOSQUITO</item>
+    </row>
+</table>

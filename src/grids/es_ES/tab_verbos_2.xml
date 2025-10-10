@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<table>
+    <row>
+        <category picture_url="tab-inicial.png" link="main_window">INICIO</category>
+        <category picture_url="tab-verbos.png" link="tab_verbos">VERBOS</category>
+        <item picture_url="jugar.png">JUGAR</item>
+        <item picture_url="cerrar.png">CERRAR</item>
+        <item picture_url="volver.png">VOLVER</item>
+        <item picture_url="pensar.png">PENSAR</item>
+    </row>
+    <row>
+        <item picture_url="tener.png">TENER</item>
+        <item picture_url="dar.png">DAR</item>
+        <item picture_url="sentir.png">SENTIR</item>
+        <item picture_url="ser.png">SER</item>
+        <item picture_url="escuchar.png">ESCUCHAR</item>
+        <item picture_url="llevar.png">LLEVAR</item>
+    </row>
+</table>

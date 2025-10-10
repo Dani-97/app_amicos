@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<table>
+    <row>
+        <category picture_url="tab-inicial.png" link="main_window">INICIO</category>
+        <item picture_url="bano.png">BAÑO</item>
+        <item picture_url="cocina.png">COCINA</item>
+        <item picture_url="habitacion.png">HABITACIÓN</item>
+        <item picture_url="salon.png">SALÓN</item>
+        <item picture_url="pasillo.png">PASILLO</item>
+    </row>
+    <row>
+        <item picture_url="puerta.png">PUERTA</item>
+        <item picture_url="ventana.png">VENTANA</item>
+        <item picture_url="ascensor.png">ASCENSOR</item>
+        <item picture_url="escalera.png">ESCALERA</item>
+        <item picture_url="llave.png">LLAVE</item>
+        <item picture_url="sofa.png">SOFÁ</item>
+    </row>
+</table>

@@ -94,18 +94,18 @@ class ProfilesManagerProvider:
         is_password_format_correct = self.password_format_validator(password)
 
         if (not is_username_format_correct):
-            raise InvalidUsernameException("El formato del nombre de usuario no es correcto. Debe tener entre 4 y 12 caracteres.")
+            raise InvalidUsernameException("nombre_usuario_no_valido")
 
         if (not is_email_format_correct):
-            raise InvalidEmailException("El formato de la dirección de email no es correcto.")
+            raise InvalidEmailException("email_no_valido")
 
         if (not is_password_format_correct):
             # La contraseña debe tener entre 6 y 12 caracteres, tener al menos un número, una mayúscula, una minúscula y un carácter especial de $, @, # ó %
-            raise InvalidPasswordException("La contraseña tiene un formato incorrecto.")
+            raise InvalidPasswordException("contrasena_no_valida")
 
         retrieved_user = self.get_user_by_username(username)
         if (retrieved_user is not None):
-            raise DuplicatedUserException("Este nombre de usuario ya existe")
+            raise DuplicatedUserException("usuario_duplicado")
         else:
             conn = sqlite3.connect(self.USERS_DB_PATH)
             c = conn.cursor()

@@ -1,38 +1,53 @@
 <LoginScreen>:
-    BoxLayout:
-        orientation: "vertical"
-        padding: 50
-        spacing: 20
+    MDScreen:
+        MDBoxLayout:
+            orientation: "vertical"
+            padding: dp(50)
+            spacing: dp(25)
+            adaptive_height: True
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
-        TextInput:
-            id: username
-            font_size: 40
-            hint_text: "Nombre de usuario"
-            multiline: False
+            MDLabel:
+                text: "Iniciar Sesión"
+                halign: "center"
+                font_style: "H4"
+                theme_text_color: "Primary"
 
-        TextInput:
-            id: password
-            font_size: 40
-            hint_text: "Contraseña"
-            multiline: False
-            password: True
+            MDTextField:
+                id: username
+                hint_text: "Nombre de usuario"
+                font_size: "20sp"
+                icon_right: "account"
+                size_hint_x: 0.6
+                pos_hint: {"center_x": 0.5}
 
-        Button:
-            text: "Iniciar Sesión"
-            font_size: 35
-            size_hint: (0.2, 0.75)
-            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-            on_press: root.validate_login()
+            MDTextField:
+                id: password
+                hint_text: "Contraseña"
+                font_size: "20sp"
+                icon_right: "lock"
+                password: True
+                size_hint_x: 0.6
+                pos_hint: {"center_x": 0.5}
 
-        Label:
-            id: login_link
-            font_size: 40
-            text: "¿No tienes cuenta? [color=2754F5][ref=signup_link]Crear cuenta[/ref][/color]"
-            on_ref_press: root.go_to_signup_page()
-            markup: True
+            MDRectangleFlatButton:
+                text: "Iniciar Sesión"
+                font_size: "20sp"
+                size_hint_x: 0.4
+                pos_hint: {"center_x": 0.5}
+                on_release: root.validate_login()
 
-        Label:
-            id: message
-            font_size: 40
-            text: ""
-            markup: True
+            MDTextButton:
+                text: "¿No tienes cuenta? Crear cuenta"
+                theme_text_color: "Custom"
+                text_color: 0.15, 0.33, 0.96, 1  # similar to #2754F5
+                pos_hint: {"center_x": 0.5}
+                on_release: root.go_to_signup_page()
+
+            MDLabel:
+                id: message
+                text: ""
+                halign: "center"
+                theme_text_color: "Custom"
+                text_color: 1, 0, 0, 1  # red for error
+                markup: True

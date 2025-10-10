@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<table>
+    <row>
+        <category picture_url="tab-inicial.png" link="main_window">INICIO</category>
+        <category picture_url="tab-comida.png" link="tab_comida">COMIDA</category>
+        <item picture_url="pizza.png">PIZZA</item>
+        <item picture_url="hamburguesa.png">HAMBURGUESA</item>
+        <item picture_url="pan.png">PAN</item>
+        <item picture_url="sandwich.png">SÁNDWICH</item>
+    </row>
+    <row>
+        <item picture_url="queso.png">QUEIXO</item>
+        <item picture_url="jamon.png">XAMÓN</item>
+        <item picture_url="cereales.png">CEREAIS</item>
+        <item picture_url="galletas.png">GALLETAS</item>
+        <item picture_url="manzana.png">MAZÁ</item>
+        <item picture_url="fresa.png">FRESA</item>
+    </row>
+</table>

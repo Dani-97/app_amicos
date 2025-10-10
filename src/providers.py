@@ -1,6 +1,8 @@
 from json import load as json_load
+import os
 from os.path import join as os_path_join, abspath as os_path_abspath, dirname as os_path_dirname, exists as os_path_exists
 import sys
+import xml.etree.ElementTree as ET
 
 class UIAssetsManager():
 
@@ -9,8 +11,57 @@ class UIAssetsManager():
 
     def set_language(self, selected_language_code):
         self.selected_language_code = selected_language_code
+
         with open(self.get_resource(f"strings/{self.selected_language_code}.json"), "r", encoding='utf-8') as f:
             self.strings = json_load(f)
+
+    def __parse_xml__(self, filename):
+        
+        def parse_xml_aux(root, grid, current_row):
+            for child in root:
+                if (len(child)>0):
+                    grid = parse_xml_aux(child, 
+                        grid, 
+                        current_row)
+                    if (child.tag=="row"):
+                        if (len(current_row)>0):
+                            grid.append(current_row)
+                            current_row = []
+                else:
+                    if (child.tag=="category"):
+                        current_row.append(("category",
+                                            child.text, 
+                                            child.attrib['picture_url'], 
+                                            child.attrib['link']))
+                    if (child.tag=="item"):
+                        current_row.append(("item",
+                                            child.text, 
+                                            child.attrib['picture_url'], 
+                                            None))
+
+            return grid
+
+        tree = ET.parse(filename)
+        root = tree.getroot()
+
+        grid = parse_xml_aux(root, [], [])
+        
+        return grid
+
+    def load_grids(self, language):
+        grids_content = {}
+
+        root_dir = f'grids/{language}'
+        grids_list = os.listdir(root_dir)
+
+        for current_grid_filename in grids_list:
+            current_grid_id = current_grid_filename.replace('.xml', '')
+            current_grid_path = f'{root_dir}/{current_grid_filename}'
+            current_grid_path = self.get_resource(current_grid_path)
+            current_grid_content = self.__parse_xml__(current_grid_path)
+            grids_content[current_grid_id] = current_grid_content
+
+        return grids_content
 
     def get_resource(self, relative_path):
         """
@@ -69,6 +120,7 @@ class Settings_Provider():
 
     def __init__(self):
         self.available_languages = ["es_ES", "gal_ES"]
+        self.languages_names_dict = {"Castellano": "es_ES", "Galego": "gal_ES"}
         self.available_tile_modes = ['text_and_pictogram', 'only_pictogram']
         self.language_selected = "es_ES"
         self.notified_widgets_list = []
@@ -81,11 +133,17 @@ class Settings_Provider():
         for widget in self.notified_widgets_list:
             widget.update_language()
 
+    def get_language_code_by_name(self, language_name):
+        return self.languages_names_dict[language_name]
+
     def get_current_language(self):
         return self.language_selected
     
-    def get_available_languages(self):
+    def get_available_languages_codes(self):
         return self.available_languages
+    
+    def get_available_languages_names(self):
+        return self.languages_names_dict.keys()
 
     def change_current_language(self, new_language):
         self.language_selected = new_language

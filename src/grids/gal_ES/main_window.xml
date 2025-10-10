@@ -1,0 +1,18 @@
+<table>
+    <row>
+        <category picture_url="tab-rapido.png" link="tab_rapido">RÁPIDO</category>
+        <category picture_url="tab-verbos.png" link="tab_verbos">VERBOS</category>
+        <category picture_url="tab-comida.png" link="tab_comida">COMIDA</category>
+        <category picture_url="tab-objetos.png" link="tab_objetos">OBXECTOS</category>
+        <category picture_url="tab-personas.png" link="tab_personas">PERSOAS</category>
+        <category picture_url="tab-lugares.png" link="tab_lugares">LUGARES</category>
+    </row>
+    <row>
+        <category picture_url="tab-transporte.png" link="tab_transporte">TRANSPORTE</category>
+        <category picture_url="tab-casa.png" link="tab_casa">CASA</category>
+        <category picture_url="tab-animales.png" link="tab_animales">ANIMAIS</category>
+        <category picture_url="tab-cuerpo.png" link="tab_cuerpo">CORPO</category>
+        <category picture_url="tab-conceptos.png" link="tab_conceptos">CONCEPTOS</category>
+        <item picture_url="int.png">?</item>
+    </row>
+</table>
