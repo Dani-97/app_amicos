@@ -76,11 +76,15 @@ class AmicosApp(MDApp):
             name="main_window"
         )
         signup_screen = SignupScreen(self.ui_assets_manager,
-                                     self.profiles_manager_provider, 
+                                     self.profiles_manager_provider,
+                                     self.settings_provider,
                                      name="signup_screen")
+        signup_screen.build()
         login_screen = LogInScreen(self.ui_assets_manager,
                                    self.profiles_manager_provider, 
+                                   self.settings_provider,
                                    name="login_screen")
+        login_screen.build()
 
         self.sm = MDScreenManager()
         self.sm.add_widget(signup_screen)
@@ -223,11 +227,58 @@ class GridWindow(MDBoxLayout):
 
 class LogInScreen(MDScreen):
     
-    def __init__(self, ui_assets_manager, profiles_manager_provider, **kwargs):
+    def __init__(self, ui_assets_manager, profiles_manager_provider, settings_provider, **kwargs):
         super().__init__(**kwargs)
         Window.size = (2340, 1080)
         self.ui_assets_manager = ui_assets_manager
         self.profiles_manager_provider = profiles_manager_provider
+        self.settings_provider = settings_provider
+        self.settings_provider.add_notified(self)
+
+        available_languages = self.settings_provider.get_available_languages_names()
+        menu_items = [
+            {
+                "text": lang,
+                "viewclass": "OneLineListItem",
+                "on_release": lambda input_value=lang: self.on_click_language_option(input_value)
+            } for lang in available_languages
+        ]
+
+        self.language_menu = MDDropdownMenu(
+            caller=None,  # We'll assign the button later
+            items=menu_items,
+            width_mult=4
+        )
+
+    def build(self):
+        login_screen_title_text = self.ui_assets_manager.get_string("iniciar_sesion")
+        self.ids.toolbar.title = login_screen_title_text
+        self.ids.toolbar.right_action_items = [["translate", lambda x: self.on_click_but_language(x)]]
+
+        username_header = self.ui_assets_manager.get_string("nombre_usuario")
+        self.ids.username.hint_text = username_header
+
+        password_header = self.ui_assets_manager.get_string("contrasena")
+        self.ids.password.hint_text = password_header
+
+        but_login_hint_text = self.ui_assets_manager.get_string("iniciar_sesion")
+        self.ids.but_login.hint_text = but_login_hint_text
+
+        link_create_account_text = self.ui_assets_manager.get_string("link_a_crear_perfil")
+        self.ids.link_create_account.text = link_create_account_text
+
+    def update_language(self):
+        self.build()
+
+    def on_click_language_option(self, widget):
+        # The KivyMD library, in this case, sends the widget as
+        # a text.
+        new_language_code = self.settings_provider.get_language_code_by_name(widget)
+        self.settings_provider.change_current_language(new_language_code)
+
+    def on_click_but_language(self, widget):
+        self.language_menu.caller = widget
+        self.language_menu.open()
 
     def go_to_signup_page(self):
         self.manager.current = 'signup_screen'
@@ -249,11 +300,64 @@ class LogInScreen(MDScreen):
 
 class SignupScreen(MDScreen):
     
-    def __init__(self, ui_assets_manager, profiles_manager_provider, **kwargs):
+    def __init__(self, ui_assets_manager, profiles_manager_provider, settings_provider, **kwargs):
         super().__init__(**kwargs)
         Window.size = (2340, 1080)
         self.ui_assets_manager = ui_assets_manager
         self.profiles_manager_provider = profiles_manager_provider
+        self.settings_provider = settings_provider
+        self.settings_provider.add_notified(self)
+        
+        available_languages = self.settings_provider.get_available_languages_names()
+        menu_items = [
+            {
+                "text": lang,
+                "viewclass": "OneLineListItem",
+                "on_release": lambda input_value=lang: self.on_click_language_option(input_value)
+            } for lang in available_languages
+        ]
+
+        self.language_menu = MDDropdownMenu(
+            caller=None,  # We'll assign the button later
+            items=menu_items,
+            width_mult=4
+        )
+
+    def build(self):
+        signup_screen_title_text = self.ui_assets_manager.get_string("crear_cuenta")
+        self.ids.toolbar.title = signup_screen_title_text
+        self.ids.toolbar.right_action_items = [["translate", lambda x: self.on_click_but_language(x)]]
+
+        username_header = self.ui_assets_manager.get_string("nombre_usuario")
+        self.ids.username.hint_text = username_header
+
+        role_header = self.ui_assets_manager.get_string("rol")
+        self.ids.role.hint_text = role_header
+
+        email_header = self.ui_assets_manager.get_string("email")
+        self.ids.email.hint_text = email_header
+
+        password_header = self.ui_assets_manager.get_string("contrasena")
+        self.ids.password.hint_text = password_header
+
+        but_create_account_text = self.ui_assets_manager.get_string("crear_cuenta")
+        self.ids.but_create_account.text = but_create_account_text
+
+        link_to_login = self.ui_assets_manager.get_string("link_a_inicio_sesion")
+        self.ids.link_to_login.text = link_to_login
+
+    def update_language(self):
+        self.build()
+
+    def on_click_language_option(self, widget):
+        # The KivyMD library, in this case, sends the widget as
+        # a text.
+        new_language_code = self.settings_provider.get_language_code_by_name(widget)
+        self.settings_provider.change_current_language(new_language_code)
+
+    def on_click_but_language(self, widget):
+        self.language_menu.caller = widget
+        self.language_menu.open()
 
     def go_to_login_page(self):
         self.manager.current = 'login_screen'
