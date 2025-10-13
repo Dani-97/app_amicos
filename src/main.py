@@ -1,67 +1,160 @@
-from android.permissions import request_permissions, Permission
-from kivy.app import App
-from kivy.config import Config
-from kivy.uix.boxlayout import BoxLayout
-from kivy.graphics.texture import Texture
-from kivy.uix.camera import Camera
-from kivy.lang import Builder
+from android import mActivity
+from android.permissions import request_permissions, check_permission, Permission
+from android.storage import app_storage_path
 from jnius import autoclass
-import numpy as np
-import cv2
+from kivy.app import App
+from kivy.clock import Clock
+from kivy.lang import Builder
+from kivy.uix.boxlayout import BoxLayout
+from datetime import datetime
+import time
 
-Config.set('kivy', 'camera', 'opencv')
+permissions_to_request = [
+        Permission.READ_MEDIA_AUDIO,
+        Permission.RECORD_AUDIO,
+]
+request_permissions(permissions_to_request)
 
-request_permissions([
-    Permission.CAMERA,
-    Permission.WRITE_EXTERNAL_STORAGE,
-    Permission.READ_EXTERNAL_STORAGE
-])
+Builder.load_file("audio_recorder.kv")
 
-CameraInfo = autoclass('android.hardware.Camera$CameraInfo')
-CAMERA_INDEX = {'front': CameraInfo.CAMERA_FACING_FRONT, 'back': CameraInfo.CAMERA_FACING_BACK}
-Builder.load_file("myapplayout.kv")
+class MyRecorder:
 
+    def __init__(self):
+        self.MediaRecorder = autoclass('android.media.MediaRecorder')
+        self.AudioSource = autoclass('android.media.MediaRecorder$AudioSource')
+        self.OutputFormat = autoclass('android.media.MediaRecorder$OutputFormat')
+        self.AudioEncoder = autoclass('android.media.MediaRecorder$AudioEncoder')
+        self.recorder = None
 
-class AndroidCamera(Camera):
-    resolution = (640, 480)
-    index = CAMERA_INDEX['back']
-    counter = 0
+        self.create_recorder()
 
-    def on_tex(self, *l):
-        if self._camera._buffer is None:
-            return None
+    def create_recorder(self):
+        now = datetime.now()
+        dt_string = now.strftime("%d/%m/%Y %H:%M:%S") \
+            .replace(" ", "").replace(":", "").replace("/", "")
+        primary_ext_storage = app_storage_path()
+        path = primary_ext_storage + '/{}.3gp'.format(dt_string)
 
-        super(AndroidCamera, self).on_tex(*l)
-        self.texture = Texture.create(size=np.flip(self.resolution), colorfmt='rgb')
-        frame = self.frame_from_buf()
-        self.frame_to_screen(frame)
+        context = mActivity.getApplicationContext()
+        result =  context.getExternalFilesDir(None)
+        if (result):
+            storage_path =  f'{str(result.toString())}/{dt_string}.3gp'
 
-    def frame_from_buf(self):
-        w, h = self.resolution
-        frame = np.frombuffer(self._camera._buffer.tostring(), 'uint8').reshape((h + h // 2, w))
-        frame_bgr = cv2.cvtColor(frame, 93)
-        if self.index:
-            return np.flip(np.rot90(frame_bgr, 1), 1)
-        else:
-            return np.rot90(frame_bgr, 3)
+        self.recorder = self.MediaRecorder()
+        self.recorder.setAudioSource(self.AudioSource.MIC)
+        self.recorder.setOutputFormat(self.OutputFormat.THREE_GPP)
+        self.recorder.setOutputFile(storage_path)
+        self.recorder.setAudioEncoder(self.AudioEncoder.AMR_NB)
+        self.recorder.prepare()
 
-    def frame_to_screen(self, frame):
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        cv2.putText(frame_rgb, str(self.counter), (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-        self.counter += 1
-        flipped = np.flip(frame_rgb, 0)
-        buf = flipped.tobytes()
-        self.texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
+    def get_recorder(self):
+        if (self.recorder is None):
+            self.create_recorder()
 
+        return self.recorder
 
-class MyLayout(BoxLayout):
-    pass
+    def remove_recorder(self):
+        delattr(self, "recorder")
+        self.recorder = None
 
-
-class MyApp(App):
+class AudioApp(App):
     def build(self):
-        return MyLayout()
+        return AudioTool()
+
+# GUI for the example
+class AudioTool(BoxLayout):
+    def __init__(self, **kwargs):
+        super(AudioTool, self).__init__(**kwargs)
+
+        granted = False
+        for i in range(10):  # Retry for a few seconds
+            if all(check_permission(p) for p in permissions_to_request):
+                granted = True
+                break
+            print("Waiting for user to grant permissions...")
+            time.sleep(1)
+
+        self.start_button = self.ids['start_button']
+        self.stop_button = self.ids['stop_button']
+        self.display_label = self.ids['display_label']
+        self.switch = self.ids['duration_switch']
+        self.user_input = self.ids['user_input']
+        self.recorder = MyRecorder()
+
+    def enforce_numeric(self):
+        """Make sure the textinput only accepts numbers"""
+        if self.user_input.text.isdigit() == False:
+            digit_list = [num for num in self.user_input.text if num.isdigit()]
+            self.user_input.text = "".join(digit_list)
+
+    def start_recording_clock(self):
+        recorder = self.recorder
+        self.mins = 0  # Reset the minutes
+        self.zero = 1  # Reset if the function gets called more than once
+        self.duration = int(self.user_input.text)  # Take the input from the user and convert to a number
+        Clock.schedule_interval(self.update_display, 1)
+        self.start_button.disabled = True  # Prevents the user from clicking start again which may crash the program
+        self.stop_button.disabled = False
+        self.switch.disabled = True  # Switch disabled when start is pressed
+        Clock.schedule_once(self.start_recording)  # start the recording
+
+    def start_recording(self, dt):
+        recorder = self.recorder
+        recorder.get_recorder().start()
+
+    def stop_recording(self):
+        recorder = self.recorder
+        if recorder:
+            Clock.unschedule(self.update_display)
+            recorder.get_recorder().stop()
+            recorder.get_recorder().reset()
+            recorder.get_recorder().release()
+            # we need to do this in order to make the object reusable
+            recorder.remove_recorder()
+        #
+        Clock.unschedule(self.start_recording)
+        self.display_label.text = 'Finished Recording!'
+        self.start_button.disabled = False
+        self.stop_button.disabled = True
+        self.switch.disabled = False
+
+    def update_display(self, dt):
+        if self.switch.active == False:
+            if self.zero < 60 and len(str(self.zero)) == 1:
+                self.display_label.text = '0' + str(self.mins) + ':0' + str(self.zero)
+                self.zero += 1
+
+            elif self.zero < 60 and len(str(self.zero)) == 2:
+                self.display_label.text = '0' + str(self.mins) + ':' + str(self.zero)
+                self.zero += 1
+
+            elif self.zero == 60:
+                self.mins += 1
+                self.display_label.text = '0' + str(self.mins) + ':00'
+                self.zero = 1
+
+        elif self.switch.active == True:
+            if self.duration == 0:  # 0
+                self.display_label.text = 'Recording Finished!'
+                self.stop_recording()
+            elif self.duration > 0 and len(str(self.duration)) == 1:  # 0-9
+                self.display_label.text = '00' + ':0' + str(self.duration)
+                self.duration -= 1
+
+            elif self.duration > 0 and self.duration < 60 and len(str(self.duration)) == 2:  # 0-59
+                self.display_label.text = '00' + ':' + str(self.duration)
+                self.duration -= 1
+
+            elif self.duration >= 60 and len(str(self.duration % 60)) == 1:  # EG 01:07
+                self.mins = self.duration / 60
+                self.display_label.text = '0' + str(self.mins) + ':0' + str(self.duration % 60)
+                self.duration -= 1
+
+            elif self.duration >= 60 and len(str(self.duration % 60)) == 2:  # EG 01:17
+                self.mins = self.duration / 60
+                self.display_label.text = '0' + str(self.mins) + ':' + str(self.duration % 60)
+                self.duration -= 1
 
 
 if __name__ == '__main__':
-    MyApp().run()
+    AudioApp().run()
