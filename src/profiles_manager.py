@@ -38,9 +38,11 @@ class ProfilesManagerProvider:
         self.notified_widgets_list.append(notified_widget)
 
     def __notify_widgets__(self):
+        current_user = self.get_current_user()
         for widget in self.notified_widgets_list:
-            widget.update_login()
+            widget.update_login(current_user)
 
+    # async function
     def init_db(self):
         conn = sqlite3.connect(self.USERS_DB_PATH)
         c = conn.cursor()
@@ -77,6 +79,7 @@ class ProfilesManagerProvider:
 
         return patt_match
 
+    # async function
     def get_user_by_username(self, username):
         conn = sqlite3.connect(self.USERS_DB_PATH)
         c = conn.cursor()
@@ -88,6 +91,7 @@ class ProfilesManagerProvider:
         
         return None
 
+    # async function
     def create_user(self, username, email, role, password):
         is_username_format_correct = self.username_format_validator(username)
         is_email_format_correct = self.email_format_validator(email)
@@ -121,6 +125,7 @@ class ProfilesManagerProvider:
             finally:
                 conn.close()
 
+    # async function
     def login_user(self, username, typed_password):
         conn = sqlite3.connect(self.USERS_DB_PATH)
         c = conn.cursor()
@@ -143,6 +148,7 @@ class ProfilesManagerProvider:
 
         raise LogInException("The username or the password are incorrect")
 
+    # async function
     def logout_current_user(self):
         conn = sqlite3.connect(self.USERS_DB_PATH)
         c = conn.cursor()
@@ -155,6 +161,7 @@ class ProfilesManagerProvider:
 
         self.__notify_widgets__()
 
+    # async function
     def delete_user(self, username, email):
         conn = sqlite3.connect(self.USERS_DB_PATH)
         c = conn.cursor()
@@ -172,6 +179,7 @@ class ProfilesManagerProvider:
 
         self.__notify_widgets__()
 
+    # async function
     def get_current_user(self):
         conn = sqlite3.connect(self.USERS_DB_PATH)
         c = conn.cursor()

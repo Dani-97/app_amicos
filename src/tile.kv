@@ -1,4 +1,5 @@
-<Tile@MDCard>:
+<Tile>:
+    id: tile_content
     size_hint: None, None
     size: dp(200), dp(200)
     radius: [15]
@@ -19,11 +20,14 @@
         Color:
             rgba: 0.4, 0.4, 0.4, 1
 
+    AsyncImage:
+        id: tile_image
+        size_hint: 1.0, 0.8
+    
     MDLabel:
         id: tile_label
-        size_hint_y: None
-        height: dp(50)
+        text: ""
         halign: 'center'
-        valign: 'middle'
-        theme_text_color: "Custom"
+        size_hint: 1.0, 0.2
         text_color: 1, 1, 1, 1
+        font_size: sp(16)

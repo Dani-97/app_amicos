@@ -1,19 +1,19 @@
 [app]
 
 # (str) Title of your application
-title = JustApp
+title = Amicos CAA
 
 # (str) Package name
-package.name = justsimpleapp
+package.name = amicos_caa
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.test
+package.domain = org.kivy
 
 # (str) Source code where the main.py live
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,ttf,json,xlsx
+source.include_exts = py,png,jpg,kv,atlas,ttf,json,xml
 
 # (list) List of inclusions using pattern matching
 #source.include_patterns = assets/*,images/*.png
@@ -36,7 +36,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma seperated e.g. requirements = sqlite3,kivy
-requirements = python3,cython==0.29.37,et-xmlfile==2.0.0,kivy==2.3.0,openpyxl==3.1.2,passlib==1.7.4,setuptools==80.9.0
+requirements = python3,cython==0.29.37,et-xmlfile==2.0.0,kivy==2.3.0,kivymd==1.2.0,openpyxl==3.1.2,passlib==1.7.4,setuptools==80.9.0
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -49,10 +49,10 @@ requirements = python3,cython==0.29.37,et-xmlfile==2.0.0,kivy==2.3.0,openpyxl==3
 #presplash.filename = %(source.dir)s/data/presplash.png
 
 # (str) Icon of the application
-#icon.filename = %(source.dir)s/data/icon.png
+icon.filename = %(source.dir)s/assets/icon.png
 
 # (str) Supported orientation (one of landscape, portrait or all)
-# orientation = all
+orientation = landscape, portrait
 
 # (list) List of service to declare
 #services = NAME:ENTRYPOINT_TO_PY,NAME2:ENTRYPOINT2_TO_PY

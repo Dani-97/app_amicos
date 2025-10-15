@@ -19,13 +19,18 @@ from kivy.uix.widget import Widget
 from kivymd.uix.snackbar import MDSnackbar
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
+from kivymd.uix.spinner import MDSpinner
 
 from kivymd.uix.navigationdrawer import (
     MDNavigationLayout,
     MDNavigationDrawer
 )
 
-from kivy.metrics import dp
+from kivy.metrics import dp, inch, mm
+
+from kivy.clock import mainthread
+import threading
+import time
 
 # --- Your custom imports ---
 from utils_exceptions import (
@@ -34,7 +39,10 @@ from utils_exceptions import (
 )
 
 class AmicosApp(MDApp):
-    
+
+    def set_current_user(self, current_user):
+        self.current_user = current_user
+
     def set_ui_assets_manager(self, ui_assets_manager):
         self.ui_assets_manager = ui_assets_manager
 
@@ -53,28 +61,35 @@ class AmicosApp(MDApp):
         self.theme_cls.primary_palette = "BlueGray"
         self.theme_cls.theme_style = "Light"
 
+        self.ui_assets_manager.set_language(self.settings_provider.get_current_language())
+
         LabelBase.register(name='Titulo', fn_regular=self.ui_assets_manager.get_resource('fonts/Orbitron-Regular.ttf'))
         LabelBase.register(name='Texto', fn_regular=self.ui_assets_manager.get_resource('fonts/FrancoisOne-Regular.ttf'))
 
+        Builder.load_file("mainmenu.kv")
+        Builder.load_file("mainwindow.kv")
         Builder.load_file("signupapp.kv")
         Builder.load_file("loginapp.kv")
+        Builder.load_file("gridwindow.kv")
         Builder.load_file("tile.kv")
 
+        # Main menu
         self.nav_layout = MDNavigationLayout()
-        self.main_menu = MainMenu(self.ui_assets_manager,
+        self.main_menu = MainMenu(self.current_user,
+                                  self.ui_assets_manager,
+                                  self.settings_provider,
                                   self.profiles_manager_provider, 
                                   orientation="vertical")
         self.main_menu.build()
 
         # Screens
-        main_window = MainWindow(
-            self.main_menu,
-            self.ui_assets_manager,
-            self.message_builder_provider,
-            self.profiles_manager_provider,
-            self.settings_provider,
-            name="main_window"
-        )
+        main_window = MainWindow(self.current_user,
+                                 self.main_menu,
+                                 self.ui_assets_manager,
+                                 self.message_builder_provider,
+                                 self.profiles_manager_provider,
+                                 self.settings_provider,
+                                 name="main_window")
         signup_screen = SignupScreen(self.ui_assets_manager,
                                      self.profiles_manager_provider,
                                      self.settings_provider,
@@ -93,9 +108,8 @@ class AmicosApp(MDApp):
 
         self.nav_layout.add_widget(self.sm)
         self.nav_layout.add_widget(self.main_menu)
-
-        current_user = self.profiles_manager_provider.get_current_user()
-        self.sm.current = "main_window" if current_user else "signup_screen"
+        
+        self.sm.current = "main_window" if self.current_user else "signup_screen"
 
         return self.nav_layout
 
@@ -106,59 +120,14 @@ class Tile(MDCard):
         self.tile_associated_text = text
         self.tile_type = tile_type
         self.link = link
-        self.md_bg_color=bg_color
+        self.md_bg_color = bg_color
         self.orientation = 'vertical'
-        self.padding = dp(16)
-        self.size_hint = (None, None)
-        tile_size = int(Window.width/8)
-        self.size = (dp(tile_size), dp(tile_size))
+        self.size_hint = (1.0, 1.0)
         self.radius = [15]
-        self.ripple_behavior = True
 
-        # Label
-        self.label = MDLabel(
-            text=text,
-            halign='center',
-            theme_text_color="Custom",
-            text_color=(1, 1, 1, 1),
-            font_style="H5",
-            size_hint_y=None,
-            height=dp(40)
-        )
-
-        self.image_anchor = AnchorLayout(anchor_x='center', anchor_y='center')
-        # Image
-        image_size = int(Window.width/12)
-        self.image = AsyncImage(source=source, 
-                                size=(dp(image_size), dp(image_size)),
-                                size_hint=(None, None))
-        self.image_anchor.add_widget(self.image)
-
-        # Add widgets according to tile_mode
-        if tile_mode == "text_and_pictogram":
-            self.__show_text_and_pictogram__()
-        elif tile_mode == "only_text":
-            self.__show_only_text__()
-        elif tile_mode == "only_pictogram":
-            self.__show_only_pictogram__()
-
-    def __show_only_text__(self):
-        self.add_widget(Widget(size_hint_y=1.0))
-        self.add_widget(self.label)
-        self.add_widget(Widget(size_hint_y=0.03))
-
-    def __show_only_pictogram__(self):
-        self.add_widget(self.image_anchor)
-        self.add_widget(Widget(size_hint_y=1.0))
-        self.label.text = ""
-        self.add_widget(self.label)
-        self.add_widget(Widget(size_hint_y=0.03))
-
-    def __show_text_and_pictogram__(self):
-        self.add_widget(self.image_anchor)
-        self.add_widget(Widget(size_hint_y=1.0))
-        self.add_widget(self.label)
-        self.add_widget(Widget(size_hint_y=0.03))
+        self.ids.tile_image.source = source
+        if (tile_mode=='text_and_pictogram'):
+            self.ids.tile_label.text = text
 
 class NormalTile(Tile):
 
@@ -178,9 +147,10 @@ class GridWindow(MDBoxLayout):
     
     def __init__(self, parent_window, tab_id, **kwargs):
         super().__init__(**kwargs)
-        Window.size = (2340, 1080)
         self.tab_id = tab_id
         self.parent_window = parent_window
+
+        self.grid = self.ids.grid_window_main_layout
 
     def set_ui_assets_manager(self, ui_assets_manager):
         self.ui_assets_manager = ui_assets_manager
@@ -193,10 +163,8 @@ class GridWindow(MDBoxLayout):
         self.message_builder_provider = message_builder_provider
 
     def build(self):
-        grid = GridLayout(rows=len(self.words_with_images),
-                          cols=len(self.words_with_images[0]) if self.words_with_images else 0,
-                          spacing=(25, 16),
-                          size_hint=(1.6, 1.6))
+        self.grid.rows = len(self.words_with_images)
+        self.grid.cols = len(self.words_with_images[0])
         for row in self.words_with_images:
             for tile_type, word, picture, link in row:
                 if (tile_type=="category"):
@@ -211,9 +179,9 @@ class GridWindow(MDBoxLayout):
                                       self.ui_assets_manager.get_resource(f'assets/{picture}'),
                                       self.tile_mode,
                                       on_release=self.on_tile_clicked)
-                grid.add_widget(tile)
+                self.grid.add_widget(tile)
 
-        self.add_widget(grid)
+        # self.add_widget(self.grid)
 
     def on_tile_clicked(self, instance):
         tile_type = instance.tile_type
@@ -229,7 +197,6 @@ class LogInScreen(MDScreen):
     
     def __init__(self, ui_assets_manager, profiles_manager_provider, settings_provider, **kwargs):
         super().__init__(**kwargs)
-        Window.size = (2340, 1080)
         self.ui_assets_manager = ui_assets_manager
         self.profiles_manager_provider = profiles_manager_provider
         self.settings_provider = settings_provider
@@ -250,6 +217,7 @@ class LogInScreen(MDScreen):
             width_mult=4
         )
 
+    @mainthread
     def build(self):
         login_screen_title_text = self.ui_assets_manager.get_string("iniciar_sesion")
         self.ids.toolbar.title = login_screen_title_text
@@ -262,7 +230,7 @@ class LogInScreen(MDScreen):
         self.ids.password.hint_text = password_header
 
         but_login_hint_text = self.ui_assets_manager.get_string("iniciar_sesion")
-        self.ids.but_login.hint_text = but_login_hint_text
+        self.ids.but_login.text = but_login_hint_text
 
         link_create_account_text = self.ui_assets_manager.get_string("link_a_crear_perfil")
         self.ids.link_create_account.text = link_create_account_text
@@ -283,26 +251,53 @@ class LogInScreen(MDScreen):
     def go_to_signup_page(self):
         self.manager.current = 'signup_screen'
 
+    @mainthread
     def go_to_main_window(self):
         self.manager.current = 'main_window'
 
     def validate_login(self):
+        
+        def __validate_login_aux__(login_screen, username, password):
+            try:
+                _ = login_screen.profiles_manager_provider.login_user(username, password)
+                login_screen.__successful_login__()
+            except LogInException:
+                login_screen.__wrong_login__()
+
+        self.login_spinner = MDSpinner(size_hint=(None, None),
+                                       size=(dp(46), dp(46)),
+                                       pos_hint={'center_x': 0.5, 'center_y': 0.5},
+                                       active=True)
+        self.ids.but_login.disabled = True
+        self.ids.link_create_account.disabled = True
+        self.add_widget(self.login_spinner)
+
         username = self.ids.username.text
         password = self.ids.password.text
-        try:
-            _ = self.profiles_manager_provider.login_user(username, password)
-            MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("inicio_sesion_correcto"))).open()
-            self.ids.username.text = ""
-            self.ids.password.text = ""
-            self.go_to_main_window()
-        except LogInException:
-            MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("inicio_sesion_incorrecto"))).open()
+        runner_thread = threading.Thread(target=__validate_login_aux__, args=(self, username, password,))
+        runner_thread.start()
+
+    @mainthread
+    def __successful_login__(self):
+        self.login_spinner.active = False
+        self.ids.but_login.disabled = False
+        self.ids.link_create_account.disabled = False
+        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("inicio_sesion_correcto"))).open()
+        self.ids.username.text = ""
+        self.ids.password.text = ""
+        self.go_to_main_window()
+
+    @mainthread
+    def __wrong_login__(self):
+        self.login_spinner.active = False
+        self.ids.but_login.disabled = False
+        self.ids.link_create_account.disabled = False
+        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("inicio_sesion_incorrecto"))).open()
 
 class SignupScreen(MDScreen):
     
     def __init__(self, ui_assets_manager, profiles_manager_provider, settings_provider, **kwargs):
         super().__init__(**kwargs)
-        Window.size = (2340, 1080)
         self.ui_assets_manager = ui_assets_manager
         self.profiles_manager_provider = profiles_manager_provider
         self.settings_provider = settings_provider
@@ -366,105 +361,88 @@ class SignupScreen(MDScreen):
         self.manager.current = 'main_window'
 
     def execute_signup(self):
+
+        def __execute_signup_aux__(signup_screen, username, email, role, password):
+            try:
+                self.profiles_manager_provider.create_user(username, email, role, password)
+                _ = self.profiles_manager_provider.login_user(username, password)
+                signup_screen.__successful_create_account__()
+            except (InvalidUsernameException, InvalidEmailException,
+                    InvalidPasswordException, DuplicatedUserException) as exception_id:
+                signup_screen.__wrong_create_account__(exception_id.message)
+
         username = self.ids.username.text
         email = self.ids.email.text
         role = self.ids.role.text
         password = self.ids.password.text
-        try:
-            self.profiles_manager_provider.create_user(username, email, role, password)
-            MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("crear_cuenta_correcto"))).open()
-            _ = self.profiles_manager_provider.login_user(username, password)
 
-            self.ids.username.text = ""
-            self.ids.email.text = ""
-            self.ids.role.text = ""
-            self.ids.password.text = ""
+        self.signup_spinner = MDSpinner(size_hint=(None, None),
+                                       size=(dp(46), dp(46)),
+                                       pos_hint={'center_x': 0.5, 'center_y': 0.5},
+                                       active=True)
+        self.ids.but_create_account.disabled = True
+        self.ids.link_to_login.disabled = True
+        self.add_widget(self.signup_spinner)
 
-            self.go_to_main_window()
-        except (InvalidUsernameException, InvalidEmailException,
-                InvalidPasswordException, DuplicatedUserException) as exception_id:
-            MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string(exception_id.message))).open()
+        runner_thread = threading.Thread(target=__execute_signup_aux__, args=(self, username, email, role, password,))
+        runner_thread.start()
+
+    @mainthread
+    def __successful_create_account__(self):
+        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("crear_cuenta_correcto"))).open()
+        self.ids.username.text = ""
+        self.ids.email.text = ""
+        self.ids.role.text = ""
+        self.ids.password.text = ""
+
+        self.ids.but_create_account.disabled = False
+        self.ids.link_to_login.disabled = False
+        self.signup_spinner.active = False
+
+        self.go_to_main_window()
+
+    @mainthread
+    def __wrong_create_account__(self, error_message):
+        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string(error_message))).open()
+
+        self.ids.but_create_account.disabled = False
+        self.ids.link_to_login.disabled = False
+        self.signup_spinner.active = False
 
 class MainMenu(MDNavigationDrawer):
 
-    def __init__(self, ui_assets_manager, profiles_manager_provider, **kwargs):
+    def __init__(self, current_user, ui_assets_manager, settings_provider, profiles_manager_provider, **kwargs):
         super().__init__(kwargs)
         self.ui_assets_manager = ui_assets_manager
+        self.settings_provider = settings_provider
+        self.settings_provider.add_notified(self)
         self.profiles_manager_provider = profiles_manager_provider
         self.profiles_manager_provider.add_notified(self)
+        self.current_user = current_user
 
-    def update_login(self):
-        self.current_user = self.profiles_manager_provider.get_current_user()
-        self.username_row_label.text = ""
-        self.email_row_label.text = ""
+    def update_language(self):
+        self.ui_assets_manager.set_language(self.settings_provider.get_current_language())
+        but_label = self.ui_assets_manager.get_string('eliminar_cuenta')
+        self.ids.but_delete_account.text = but_label
+
+    def update_login(self, current_user):
+        self.current_user = current_user
+        self.ids.username_row_label.text = ""
+        self.ids.email_row_label.text = ""
         if (self.current_user is not None):
-            self.username_row_label.text = self.current_user.get_username()
-            self.email_row_label.text = self.current_user.get_email()
+            self.ids.username_row_label.text = self.current_user.get_username()
+            self.ids.email_row_label.text = self.current_user.get_email()
 
     def build(self):
-        main_layout = MDBoxLayout(orientation="vertical")
-
-        username_row_box = MDBoxLayout()
-        username_row_icon = MDIcon(icon="account", 
-                                pos_hint={"center_y": 0.75},
-                                padding=(16, 16))
-        self.current_user = self.profiles_manager_provider.get_current_user()
+        self.ids.but_delete_account.text = self.ui_assets_manager.get_string('eliminar_cuenta')
         current_username = ""
         current_user_email = ""
         if (self.current_user!=None):
             current_username = self.current_user.get_username()
             current_user_email = self.current_user.get_email()
 
-        self.username_row_label = MDLabel(text=current_username, 
-                                  size_hint_y=None,
-                                  font_style="Body1",
-                                  pos_hint={"center_y": 0.75})
-        username_row_box.add_widget(username_row_icon)
-        username_row_box.add_widget(self.username_row_label)
-        
-        email_row_box = MDBoxLayout()
-        email_row_icon = MDIcon(icon="email", 
-                        pos_hint={"center_y": 1.50},
-                        padding=(16, 16))
-        self.email_row_label = MDLabel(text=current_user_email, 
-                                  size_hint_y=None,
-                                  font_style="Body1",
-                                  pos_hint={"center_y": 1.50})
-        
-        email_row_box.add_widget(email_row_icon)
-        email_row_box.add_widget(self.email_row_label)
-
-        third_row_box = MDBoxLayout()
-        third_row_space = MDLabel(text="")
-        third_row_button = MDIconButton(
-            icon="logout",
-            pos_hint={"center_y": 2.90},
-            md_bg_color="#f9f871",
-            on_release=lambda x: self.on_click_but_close_session(x)
-        )
-        third_row_box.add_widget(third_row_space)
-        third_row_box.add_widget(third_row_button)
-
-        fourth_row_box = MDBoxLayout()
-        fourth_row_label = MDLabel(text="", pos_hint={"center_y": 3.30})
-        
-        fourth_row_button = MDIconButton(
-            icon="delete-forever",
-            pos_hint={"center_y": 3.30},
-            size_hint=(None, None),
-            padding=(40, 0),
-            md_bg_color="#a23663",
-            on_release=lambda x: self.on_click_but_delete_account(x)
-        )
-        fourth_row_box.add_widget(fourth_row_label)
-        fourth_row_box.add_widget(fourth_row_button)
-
-        main_layout.add_widget(username_row_box)
-        main_layout.add_widget(email_row_box)
-        main_layout.add_widget(third_row_box)
-        main_layout.add_widget(fourth_row_box)
-
-        self.add_widget(main_layout)
+        self.ids.username_row_label.text = current_username
+        self.ids.email_row_label.text = current_user_email
 
     def on_click_but_delete_account(self, widget):
         delete_account_dialog = DeleteAccountDialog(self,
@@ -479,7 +457,23 @@ class MainMenu(MDNavigationDrawer):
         self.set_state('close')
 
     def on_click_but_close_session(self, widget):
-        self.profiles_manager_provider.logout_current_user()
+
+        def __logout_current_user_aux__(main_menu):
+            self.profiles_manager_provider.logout_current_user()     
+            main_menu.__successful_logout__()    
+
+        runner_thread = threading.Thread(target=__logout_current_user_aux__, args=(self,))
+        runner_thread.start()
+
+        self.logout_spinner = MDSpinner(size_hint=(None, None),
+                            size=(dp(46), dp(46)),
+                            pos_hint={'center_x': 0.5, 'center_y': 0.5},
+                            active=True)
+        self.add_widget(self.logout_spinner)
+
+    @mainthread
+    def __successful_logout__(self):
+        self.logout_spinner.active = False
         self.close_menu()
 
 class DeleteAccountDialog(MDBoxLayout):
@@ -487,22 +481,16 @@ class DeleteAccountDialog(MDBoxLayout):
     def __init__(self, main_menu, ui_assets_manager, profiles_manager_provider, **kwargs):
         super().__init__(**kwargs)
         self.orientation = "vertical"
-        self.spacing = dp(12)
-        self.padding = dp(12)
         self.size_hint_y = None
-        self.height = dp(130)
+        self.height = dp(120)
 
         self.main_menu = main_menu
         self.ui_assets_manager = ui_assets_manager
         self.profiles_manager_provider = profiles_manager_provider
         deletion_warning = self.ui_assets_manager.get_string("aviso_eliminacion")
         self.dialog_label = MDLabel(text=deletion_warning) 
-        
-        self.email_field = MDTextField(
-            mode="rectangle",
-            size_hint_y=None,
-            height=dp(60),
-        )
+
+        self.email_field = MDTextField()
         self.add_widget(self.dialog_label)
         self.add_widget(self.email_field)
 
@@ -526,19 +514,43 @@ class DeleteAccountDialog(MDBoxLayout):
         self.delete_dialog.open()
 
     def confirm_account_deletion(self, widget):
-        current_username = self.profiles_manager_provider.get_current_user().get_username()
+
+        def __delete_account_aux__(delete_account_dialog, typed_email):
+            try:
+                current_username = self.profiles_manager_provider.get_current_user().get_username()
+                self.profiles_manager_provider.delete_user(current_username, typed_email)
+                delete_account_dialog.__successful_delete_user__()
+            except UserDeletionException:
+                delete_account_dialog.__wrong_delete_user__()
+
         typed_email = self.email_field.text
+        runner_thread = threading.Thread(target=__delete_account_aux__, args=(self, typed_email,))
+        runner_thread.start()
+
+        self.delete_user_spinner = MDSpinner(size_hint=(None, None),
+                                             size=(dp(46), dp(46)),
+                                             pos_hint={'center_x': 0.5, 'center_y': 0.5},
+                                             active=True)
+        self.add_widget(self.delete_user_spinner)
+
+    @mainthread
+    def __successful_delete_user__(self):
+        self.delete_user_spinner.active = False
         self.delete_dialog.dismiss()
-        try:
-            self.main_menu.close_menu()
-            self.profiles_manager_provider.delete_user(current_username, typed_email)
-            MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("confirmacion_eliminacion_cuenta"))).open()
-        except UserDeletionException:
-            MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("eliminar_cuenta_email_incorrecto"))).open()
+        self.main_menu.close_menu()
+        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("confirmacion_eliminacion_cuenta"))).open()
+
+    @mainthread
+    def __wrong_delete_user__(self):
+        self.delete_user_spinner.active = False
+        self.delete_dialog.dismiss()
+        self.main_menu.close_menu()
+        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("eliminar_cuenta_email_incorrecto"))).open()
 
 class MainWindow(MDScreen):
 
     def __init__(self,
+                 current_user,
                  main_menu,
                  ui_assets_manager,
                  message_builder_provider,
@@ -555,52 +567,12 @@ class MainWindow(MDScreen):
         self.settings_provider = settings_provider
         self.settings_provider.add_notified(self)
         self.dialog = None
+        self.current_user = current_user
 
-        Window.size = (2340, 1080)
-
-        self.build()
-
-    def go_to_login_page(self):
-        self.manager.current = "login_screen"
-
-    def build(self):
-        self.clear_widgets()
-        self.ui_assets_manager.set_language(self.settings_provider.get_current_language())
-
-        # --- MAIN LAYOUT ---
-        self.main_layout = MDBoxLayout(orientation="vertical")
-
-        self.current_user = self.profiles_manager_provider.get_current_user()
-        self.current_username = self.current_user.get_username() if self.current_user else ""
-
-        # --- TOP LAYOUT ---
-        self.top_layout = MDBoxLayout(orientation="vertical")
-
-        self.build_top_app_bar()
-        self.build_message_field()
-
-        self.main_layout.add_widget(self.top_layout)
-
-        # --- GRID SETUP ---
-        self.grids_content = {}
-        self.build_grid_content()
-
-        self.grid_window = None
-        self.swap_grid_window('main_window')
-
-        self.add_widget(self.main_layout)
-
-    def build_top_app_bar(self):
-        self.toolbar = MDTopAppBar(
-            title=self.ui_assets_manager.get_string("titulo_app"),
-            md_bg_color="#29acb6",
-            type="top",
-            type_height="small",
-            left_action_items=[["menu", lambda x: self.on_click_main_menu_dots(x)],
-                               ["eye", lambda x: self.on_click_but_tile_mode(x)]],
-            right_action_items=[["translate", lambda x: self.on_click_but_language(x)]],
-            padding=(18, 18)
-        )
+        self.ids.top_bar.left_action_items = [["menu", lambda x: self.on_click_main_menu_dots(x)],
+                                              ["eye", lambda x: self.on_click_but_tile_mode(x)]]
+        self.ids.top_bar.right_action_items = [["translate", lambda x: self.on_click_but_language(x)]]
+        self.ids.top_bar.title = self.ui_assets_manager.get_string('titulo_app')
 
         # --- Language selection dropdown ---
         available_languages = self.settings_provider.get_available_languages_names()
@@ -617,59 +589,22 @@ class MainWindow(MDScreen):
             width_mult=4
         )
 
-        self.top_layout.add_widget(self.toolbar)
+        self.build()
 
-    def build_message_field(self):
-        # --- MESSAGE FIELD WITH ICONS OVERLAY ---
-        self.message_field_container = MDBoxLayout(padding=(18, 18))
+    @mainthread
+    def go_to_login_page(self):
+        self.manager.current = "login_screen"
 
-        # Speaker icon button
-        self.but_play_speech = MDIconButton(
-            icon="account-voice",
-            font_size="28sp",
-            pos_hint={"top": 0.95},
-            md_bg_color="#f9f871",
-            on_release=self.on_click_but_play_speech
-        )
-        self.message_field_container.add_widget(self.but_play_speech)
+    def build(self):
+        self.ids.grid_window_layout.clear_widgets()
+        self.current_username = self.current_user.get_username() if self.current_user else ""
 
-        # Scrollable text field
-        self.tf_user_aac_message = MDTextField(
-            text="",
-            readonly=True,
-            mode="rectangle",
-            multiline=True,
-            height=Window.height * 0.2,
-            pos_hint={"right": 0.9, "top": 0.99},
-            line_color_focus=(0.3, 0.3, 0.3, 1)
-        )
-        self.message_field_container_adjuster = MDBoxLayout(padding=(18, 0))
-        self.message_field_container_adjuster.add_widget(self.tf_user_aac_message)
-        self.message_field_container.add_widget(self.message_field_container_adjuster)
+        # # --- GRID SETUP ---
+        self.grids_content = {}
+        self.build_grid_content()
 
-        # --- ICON BUTTONS OVERLAY ---
-
-        # Delete last word button
-        self.but_delete_last_word = MDIconButton(
-            icon="backspace",
-            font_size="28sp",
-            pos_hint={"top": 0.99},  # Top-right corner
-            md_bg_color="#f9f871",
-            on_release=self.on_click_but_delete_last_word,
-        )
-        self.message_field_container.add_widget(self.but_delete_last_word)
-
-        # Clear message button
-        self.but_clear_message = MDIconButton(
-            icon="delete",
-            font_size="28sp",
-            pos_hint={"top": 0.99},
-            md_bg_color="#f9f871",
-            on_release=self.on_click_but_clear_message
-        )
-        self.message_field_container.add_widget(self.but_clear_message)
-
-        self.top_layout.add_widget(self.message_field_container)
+        self.grid_window = None
+        self.swap_grid_window('main_window')
 
     # --- GRID & LANGUAGE LOGIC ---
     def build_grid_content(self):
@@ -680,24 +615,22 @@ class MainWindow(MDScreen):
         message = self.message_builder_provider.get_current_message()
         message_str = " ".join(message)
 
-        self.tf_user_aac_message.text = message_str
+        self.ids.tf_user_aac_message.text = message_str
 
     def update_language(self):
         self.message_builder_provider.clear_message()
         self.build()
 
-    def update_login(self):
-        current_user = self.profiles_manager_provider.get_current_user()
-        if current_user:
-            self.build()
-        else:
+    def update_login(self, current_user):
+        if (current_user is None):
             self.go_to_login_page()
 
     def swap_grid_window(self, tab_id):
         if self.grid_window:
-            self.main_layout.remove_widget(self.grid_window)
+            self.ids.grid_window_layout.remove_widget(self.grid_window)
 
-        self.grid_window = GridWindow(self, tab_id, padding=(16, 16))
+        self.grid_window = GridWindow(self, 
+                                      tab_id)
         self.grid_window.set_ui_assets_manager(self.ui_assets_manager)
         self.grid_window.set_content(
             self.grids_content[tab_id],
@@ -706,28 +639,11 @@ class MainWindow(MDScreen):
         self.grid_window.set_message_builder_provider(self.message_builder_provider)
         self.grid_window.build()
 
-        self.main_layout.add_widget(self.grid_window)
-        self.main_layout.do_layout()
+        self.ids.grid_window_layout.add_widget(self.grid_window)
 
     # --- BUTTON CALLBACKS ---
     def on_click_main_menu_dots(self, widget):
         self.main_menu.open_menu()
-
-    def on_click_but_profile(self, widget):
-        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("no_disponible"))).open()
-
-    def on_click_but_play_speech(self, widget):
-        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("no_disponible"))).open()
-
-    def on_click_but_language(self, widget):
-        self.language_menu.caller = widget
-        self.language_menu.open()
-
-    def on_click_language_option(self, widget):
-        # The KivyMD library, in this case, sends the widget as
-        # a text.
-        new_language_code = self.settings_provider.get_language_code_by_name(widget)
-        self.settings_provider.change_current_language(new_language_code)
 
     def on_click_but_tile_mode(self, widget):
         self.message_builder_provider.clear_message()
@@ -739,6 +655,22 @@ class MainWindow(MDScreen):
                 new_idx = (idx+1)%(len(available_tile_modes))
 
         self.settings_provider.change_current_tile_mode(available_tile_modes[new_idx])
+
+    def on_click_but_language(self, widget):
+        self.language_menu.caller = widget
+        self.language_menu.open()
+
+    def on_click_but_profile(self, widget):
+        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("no_disponible"))).open()
+
+    def on_click_but_play_speech(self, widget):
+        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("no_disponible"))).open()
+
+    def on_click_language_option(self, widget):
+        # The KivyMD library, in this case, sends the widget as
+        # a text.
+        new_language_code = self.settings_provider.get_language_code_by_name(widget)
+        self.settings_provider.change_current_language(new_language_code)
 
     def on_click_but_delete_last_word(self, widget):
         self.message_builder_provider.remove_last_word_from_message()

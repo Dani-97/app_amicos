@@ -1,0 +1,48 @@
+<MainWindow>:
+    RelativeLayout:
+        # Top App Bar
+        MDTopAppBar:
+            id: top_bar
+            title: ""
+            pos_hint: {"top": 1}
+            elevation: 10
+            md_bg_color: "#29acb6"
+
+        MDIconButton:
+            id: but_play_speech
+            icon: "account-voice"
+            pos_hint: {"top": 0.81, "right": 0.075}
+            font_size: sp(28)
+            md_bg_color: "#f9f871"
+            on_release: root.on_click_but_play_speech(id)
+
+        MDTextField:
+            id: tf_user_aac_message
+            text: ""
+            readonly: True
+            mode: "rectangle"
+            multiline: True
+            pos_hint: {"top": 0.81, "right": 0.85}
+            size_hint_x: 0.75
+            line_color_focus: 0.3, 0.3, 0.3, 1
+
+        MDIconButton:
+            id: but_delete_last_word
+            icon: "backspace"
+            pos_hint: {"top": 0.81, "right": 0.93}
+            font_size: sp(28)
+            md_bg_color: "#f9f871"
+            on_release: root.on_click_but_delete_last_word(id)
+
+        MDIconButton:
+            id: but_clear_message
+            icon: "delete"
+            pos_hint: {"top": 0.81, "right": 0.99}
+            font_size: sp(28)
+            md_bg_color: "#f9f871"
+            on_release: root.on_click_but_clear_message(id)
+
+    MDBoxLayout:
+        id: grid_window_layout
+        size_hint_y: 0.6
+        pos_hint: {"top": 0.65}

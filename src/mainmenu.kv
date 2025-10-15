@@ -1,0 +1,45 @@
+<MainMenu>:
+    MDBoxLayout:
+        orientation: "vertical"
+
+        RelativeLayout:
+            pos_hint: {"top": 1.0}
+            
+            MDIcon:
+                icon: "account"
+                size_hint_y: 0.2
+                pos_hint: {"top": 1.0}
+
+            MDLabel:
+                id: username_row_label
+                text: ""
+                size_hint_y: 0.2
+                pos_hint: {"top": 1.0}
+                font_style: "Body1"
+
+            MDIcon:
+                icon: "email"
+                size_hint_y: 0.2
+                pos_hint: {"top": 0.7}
+
+            MDLabel:
+                id: email_row_label
+                text: ""
+                size_hint_y: 0.2
+                pos_hint: {"top": 0.7}
+                font_style: "Body1"
+
+            MDIconButton:
+                id: but_logout
+                icon: "logout"
+                pos_hint: {"top": 1.0, "right": 0.95}
+                md_bg_color: "#f9f871"
+                on_release: root.on_click_but_close_session(id)
+
+            MDTextButton:
+                id: but_delete_account
+                text: ""
+                pos_hint: {"bottom": 1.0, "left": 1.0}
+                md_bg_color: "#a23663"
+                padding: 16, 16
+                on_release: root.on_click_but_delete_account(id)
