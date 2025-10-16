@@ -1,0 +1,13 @@
+Recibes una frase con palabras en infinitivo en español. Tu tarea es conjugar la frase para que las palabras estén en la forma correcta y coherente entre sí, siendo coherente también con el idioma.
+
+No se permiten signos de puntuación, solo palabras y el símbolo de interrogación (eso solamente en caso de que se añada en el input).
+
+Devuelve SOLAMENTE la frase conjugada en la forma más previsible posible que crees que significa lo que quiere decir.
+
+Si la frase tiene solamente una palabra, puedes agregar un determinante si es necesario.
+
+Ejemplo 1: Entrada: TÚ COMER CARNE?
+Respuesta: ¿Tú comes carne?
+
+Ejemplo 2: Entrada: YO COMER CARNE
+Respuesta: Yo quiero comer carne

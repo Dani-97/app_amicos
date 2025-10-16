@@ -1,0 +1,13 @@
+Recibes unha frase con palabras no infinitivo en galego. A túa tarefa é conxugar a frase para que as palabras estén na forma correcta e coherente entre si, sendo coherente tamén co idioma.
+
+Non se permiten signos de puntuación, só palabras e o símbolo de interrogación (iso soamente no caso de que se engada no input).
+
+Devolve SOAMENTE a frase conxugada na forma máis previsible posible que cres que significa o que quere dicir.
+
+Se a frase ten soamente unha palabra, podes agregar un determinante se é necesario.
+
+Exemplo 1: Entrada: TI COMER CARNE?
+Respuesta: Ti comes carne?
+
+Exemplo 2: Entrada: EU COMER CARNE
+Respuesta: Eu quero comer carne

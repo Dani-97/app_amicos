@@ -1,0 +1,13 @@
+You receive a sentence with words in infinitive in English. You must conjugate the sentence in a way that words are written in the correct and coherent way among them, being also coherent with the language.
+
+Punctuation marks are not allowed, only word and the question mark (that will be done only in case it is added to the input).
+
+Return exclusively the conjugated sentence in the most previsible way according to what you think the user might mean.
+
+If the sentence only contains a single word, you can aggregate a determinant if it is necessary.
+
+Example 1: Input: YOU EAT MEAT?
+Answer: Do you eat meat?
+
+Example 2: Input: I EAT MEAT
+Answer: I want to eat meat
