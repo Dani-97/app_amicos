@@ -1,19 +1,19 @@
 [app]
 
 # (str) Title of your application
-title = Opencv Android
+title = Amicos CAA
 
 # (str) Package name
-package.name = OC2A
+package.name = amicos_caa
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.test
+package.domain = org.kivy
 
 # (str) Source code where the main.py live
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas
+source.include_exts = py,png,jpg,kv,atlas,java
 
 # (list) List of inclusions using pattern matching
 #source.include_patterns = assets/*,images/*.png
@@ -37,7 +37,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy==2.2.1,opencv==4.8.0,numpy,android
+requirements = python3,kivy==2.2.1,opencv==4.8.0,numpy,android,pyjnius
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -180,8 +180,11 @@ android.permissions = CAMERA
 # directory containing the files)
 #android.add_src =
 
+# (path) Path to the file of Gradle dependencies
+# android.gradle_include =
+
 # (list) Android AAR archives to add
-#android.add_aars =
+# android.add_aars = 
 
 # (list) Put these files or directories in the apk assets directory.
 # Either form may be used, and assets need not be in 'source.include_exts'.
@@ -202,7 +205,7 @@ android.permissions = CAMERA
 #android.add_resources =
 
 # (list) Gradle dependencies to add
-#android.gradle_dependencies =
+android.gradle_dependencies = com.google.mediapipe:facemesh:0.10.20
 
 # (bool) Enable AndroidX support. Enable when 'android.gradle_dependencies'
 # contains an 'androidx' package, or any package from Kotlin source.
@@ -217,7 +220,7 @@ android.permissions = CAMERA
 # (list) Gradle repositories to add {can be necessary for some android.gradle_dependencies}
 # please enclose in double quotes 
 # e.g. android.gradle_repositories = "maven { url 'https://kotlin.bintray.com/ktor' }"
-#android.add_gradle_repositories =
+android.add_gradle_repositories = "maven {url 'https://mvnrepository.com/artifact/com.google.mediapipe/facemesh/0.10.20'}"
 
 # (list) packaging options to add 
 # see https://google.github.io/android-gradle-dsl/current/com.android.build.gradle.internal.dsl.PackagingOptions.html
@@ -331,7 +334,7 @@ android.allow_backup = True
 #p4a.source_dir =
 
 # (str) The directory in which python-for-android should look for your own build recipes (if any)
-#p4a.local_recipes =
+p4a.local_recipes = ./recipes
 
 # (str) Filename to the hook for p4a
 #p4a.hook =
