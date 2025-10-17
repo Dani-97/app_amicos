@@ -2,6 +2,8 @@
 
 Este repositorio contiene la implementación de la App Amicos, una aplicación Android CAA (Comunicación Aumentativa y Alternativa) para la asistencia a personas con dificultades del habla.
 
+![Pantalla principal AMICOS CAA](demo_main_window.png "Pantalla principal")
+
 ## Detalles de la implementación: librerías y herramientas necesarias
 
 La aplicación está implementada con las librerías Kivy y KivyMD, las cuales permiten desarrollar aplicaciones multiplataforma. En el caso de este proyecto, ha sido utilizado porque permite implementar aplicaciones de Android utilizando Python. A pesar de las ventajas, la compilación de las aplicaciones Android con este entorno de desarrollo se complica, ya que es necesario utilizar una herramienta que convierta código Python a código ejecutable por un dispositivo Android. Esto se consigue por medio de la herramienta automatizada Buildozer. En términos generales, la aplicación se puede ejecutar en un dispositivo de escritorio directamente (siempre y cuando no tenga funcionalidades que dependan de la plataforma) haciendo una llamada a "python3 main.py", como en cualquier código de Python habitual. Sin embargo, para poder ejecutar la aplicación móvil, es necesario pasar por el proceso de compilarla con la herramienta Buildozer.
