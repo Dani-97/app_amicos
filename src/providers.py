@@ -4,6 +4,8 @@ from os.path import join as os_path_join, abspath as os_path_abspath, dirname as
 import sys
 import xml.etree.ElementTree as ET
 
+from platform_dependent_modules import PlatformDependentModulesFactory
+
 class UIAssetsManager():
 
     def __init__(self):
@@ -90,6 +92,11 @@ class MessageBuilderProvider():
         self.message = []
         self.notified_widgets_list = []
 
+    def set_platform(self, platform):
+        self.platform = platform
+        platform_modules_factory = PlatformDependentModulesFactory()
+        self.platform_modules_obj = platform_modules_factory.create_modules_provider(self.platform)
+
     def add_notified(self, notified_widget):
         self.notified_widgets_list.append(notified_widget)
 
@@ -103,6 +110,13 @@ class MessageBuilderProvider():
     def update_message(self, new_message):
         self.message = new_message
         self.__notify_widgets__()
+
+    def text_to_speech(self, message_list, locale):
+        message = ""
+        for current_word in message_list:
+            message += current_word + " "
+
+        self.platform_modules_obj.text_to_speech(message, locale)
 
     def add_word_to_message(self, new_word):
         self.message.append(new_word)

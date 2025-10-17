@@ -33,7 +33,7 @@
     "idioma": "Idioma",
     "modo_celdas": "Texto Sí/No",
     "cerrar_sesion": "Cerrar sesión",
-    "no_disponible": "La función no está disponible en este momento",
+    "no_disponible": "La función no está disponible para tu plataforma actual",
     "iniciar_sesion": "Iniciar sesión",
     "inicio_sesion_correcto": "Inicio de sesión correcto",
     "inicio_sesion_incorrecto": "Nombre de usuario o contraseña incorrectos",

@@ -15,6 +15,8 @@ if __name__ == '__main__':
     current_user = profiles_manager_provider.get_current_user()
     
     amicos_app = AmicosApp()
+    current_platform = amicos_app.get_platform()
+    message_builder_provider.set_platform(current_platform)
     amicos_app.set_current_user(current_user)
     amicos_app.set_ui_assets_manager(ui_assets_manager)
     amicos_app.set_message_builder_provider(message_builder_provider)

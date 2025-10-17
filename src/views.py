@@ -26,6 +26,8 @@ from kivymd.uix.navigationdrawer import (
     MDNavigationDrawer
 )
 
+from kivy.utils import platform
+
 from kivy.metrics import dp, inch, mm
 
 from kivy.clock import mainthread
@@ -39,6 +41,9 @@ from utils_exceptions import (
 )
 
 class AmicosApp(MDApp):
+
+    def get_platform(self):
+        return platform
 
     def set_current_user(self, current_user):
         self.current_user = current_user
@@ -660,11 +665,14 @@ class MainWindow(MDScreen):
         self.language_menu.caller = widget
         self.language_menu.open()
 
-    def on_click_but_profile(self, widget):
-        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("no_disponible"))).open()
-
     def on_click_but_play_speech(self, widget):
-        MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("no_disponible"))).open()
+        current_message = self.message_builder_provider.get_current_message()
+        current_locale = self.settings_provider.get_current_language().split('_')
+        if (len(current_message)>0):
+            try:
+                self.message_builder_provider.text_to_speech(current_message, current_locale)
+            except NotImplementedError:
+                MDSnackbar(MDLabel(text=self.ui_assets_manager.get_string("no_disponible"))).open()
 
     def on_click_language_option(self, widget):
         # The KivyMD library, in this case, sends the widget as
